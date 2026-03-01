@@ -1,0 +1,108 @@
+tools:
+  - name: search_web
+    description: "Search the web for information on a given query"
+    risk_level: low
+    side_effect: false
+    data_access: public
+    enabled: true
+    parameters:
+      query:
+        type: string
+        required: true
+        description: "The search query"
+
+  - name: read_email
+    description: "Read an email from the inbox by email ID"
+    risk_level: medium
+    side_effect: false
+    data_access: private
+    enabled: true
+    parameters:
+      email_id:
+        type: string
+        required: true
+        description: "The ID of the email to read"
+
+  - name: send_email
+    description: "Send an email to specified recipients"
+    risk_level: high
+    side_effect: true
+    data_access: private
+    enabled: true
+    parameters:
+      to:
+        type: string
+        required: true
+        description: "Recipient email address"
+        whitelist:
+          - "user@company.com"
+          - "team@company.com"
+          - "admin@company.com"
+      subject:
+        type: string
+        required: true
+        description: "Email subject line"
+      body:
+        type: string
+        required: true
+        description: "Email body content"
+
+  - name: read_file
+    description: "Read contents of a file from the file system"
+    risk_level: medium
+    side_effect: false
+    data_access: private
+    enabled: true
+    parameters:
+      file_path:
+        type: string
+        required: true
+        description: "Path to the file to read"
+
+  - name: write_file
+    description: "Write content to a file"
+    risk_level: high
+    side_effect: true
+    data_access: system
+    enabled: true
+    parameters:
+      file_path:
+        type: string
+        required: true
+        description: "Path where the file should be written"
+      content:
+        type: string
+        required: true
+        description: "Content to write to the file"
+
+  - name: create_document
+    description: "Create a new document with given content"
+    risk_level: low
+    side_effect: true
+    data_access: public
+    enabled: true
+    parameters:
+      title:
+        type: string
+        required: true
+        description: "Document title"
+      content:
+        type: string
+        required: true
+        description: "Document content"
+
+  - name: execute_code
+    description: "Execute arbitrary code (DANGEROUS - disabled by default)"
+    risk_level: critical
+    side_effect: true
+    data_access: system
+    enabled: false  # Disabled by default
+    parameters:
+      code:
+        type: string
+        required: true
+        description: "Code to execute"
+      language:
+        type: string
+        required: true
+        description: "Programming language"

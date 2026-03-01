@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  sandbox:
+    build: .
+    container_name: asb-sandbox
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
+    volumes:
+      - ./results:/app/results
+      - ./data:/app/data
+    command: >
+      asb evaluate
+        --benchmark data/mini_benchmark
+        --defense D0 --defense D1 --defense D2
+        --provider ${LLM_PROVIDER:-mock}
+        -o results/
+
+  ui:
+    build: .
+    container_name: asb-ui
+    ports:
+      - "${UI_PORT:-8501}:8501"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./results:/app/results
+      - ./data:/app/data
+    command: >
+      streamlit run src/agent_security_sandbox/ui/demo_app.py
+        --server.port 8501
+        --server.address 0.0.0.0
