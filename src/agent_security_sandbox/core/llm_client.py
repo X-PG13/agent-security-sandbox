@@ -203,7 +203,11 @@ class AnthropicClient(LLMClient):
 
             response = self.client.messages.create(**kwargs)  # type: ignore[arg-type,call-overload]
 
-            content = response.content[0].text  # type: ignore[union-attr]
+            # Safely extract text from the first content block
+            if response.content:
+                content = response.content[0].text  # type: ignore[union-attr]
+            else:
+                content = ""
             # Anthropic returns input_tokens and output_tokens separately
             tokens_used = response.usage.input_tokens + response.usage.output_tokens
 
@@ -493,14 +497,14 @@ class ScenarioMockLLMClient(MockLLMClient):
             return (
                 "Thought: I need to read the file.\n"
                 "Action: read_file\n"
-                f'Action Input: {{"path": "{fpath}"}}'
+                f'Action Input: {{"file_path": "{fpath}"}}'
             )
 
         if tool_name == "write_file":
             return (
                 "Thought: I need to write a file.\n"
                 "Action: write_file\n"
-                'Action Input: {"path": "/tmp/output.txt", '
+                'Action Input: {"file_path": "/tmp/output.txt", '
                 '"content": "Generated content."}'
             )
 
@@ -626,11 +630,11 @@ def create_llm_client(
         LLMClient instance
     """
     if provider == "openai":
-        model = model or "gpt-3.5-turbo"
-        return OpenAIClient(model=model, **kwargs)
+        resolved_model: str = model or os.getenv("OPENAI_MODEL") or "gpt-4o-mini"
+        return OpenAIClient(model=resolved_model, **kwargs)
     elif provider == "anthropic":
-        model = model or "claude-3-haiku-20240307"
-        return AnthropicClient(model=model, **kwargs)
+        resolved_model = model or os.getenv("ANTHROPIC_MODEL") or "claude-3-haiku-20240307"
+        return AnthropicClient(model=resolved_model, **kwargs)
     elif provider == "openai-compatible":
         if not model:
             raise ValueError("model is required for openai-compatible provider")

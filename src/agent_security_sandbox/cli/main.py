@@ -17,11 +17,26 @@ Usage examples::
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Dict, Optional
 
 import click
+
+# Load .env file if present (before any os.getenv calls)
+try:
+    from dotenv import load_dotenv
+
+    # Walk up from cli/main.py to find .env at repo root
+    _repo_root = Path(__file__).resolve().parents[3]
+    _env_file = _repo_root / ".env"
+    if _env_file.exists():
+        load_dotenv(_env_file)
+    else:
+        load_dotenv()  # try cwd
+except ImportError:
+    pass  # python-dotenv not installed; env vars must be set externally
 
 # ---------------------------------------------------------------------------
 # Lazy / guarded imports -- keep the CLI usable even when optional
@@ -139,7 +154,8 @@ def _build_llm_client(provider: str, model: Optional[str], base_url: Optional[st
     """Construct an LLM client from CLI options."""
     create_llm_client = _import_llm_client()
     kwargs: Dict = {}
-    if base_url:
+    # Only pass base_url for providers that accept it
+    if base_url and provider not in ("mock",):
         kwargs["base_url"] = base_url
     return create_llm_client(provider=provider, model=model, **kwargs)
 
@@ -221,24 +237,26 @@ def cli():
 @cli.command()
 @click.argument("goal")
 @click.option(
-    "--defense", "-d", default="D0",
-    help="Defense strategy ID (D0-D4).",
+    "--defense", "-d", default=lambda: os.getenv("DEFAULT_DEFENSE", "D0"),
+    help="Defense strategy ID (D0-D4). [env: DEFAULT_DEFENSE]",
 )
 @click.option(
-    "--provider", default="mock",
-    help="LLM provider: openai, anthropic, openai-compatible, or mock.",
+    "--provider", default=lambda: os.getenv("LLM_PROVIDER", "mock"),
+    help="LLM provider: openai, anthropic, openai-compatible, or mock. [env: LLM_PROVIDER]",
 )
 @click.option(
-    "--model", default=None,
-    help="Model name (provider-specific). Uses provider default if omitted.",
+    "--model", default=lambda: os.getenv("OPENAI_MODEL"),
+    help="Model name (provider-specific). [env: OPENAI_MODEL]",
 )
 @click.option(
-    "--base-url", default=None,
-    help="API base URL for openai-compatible provider.",
+    "--base-url", default=lambda: os.getenv("OPENAI_BASE_URL"),
+    help="API base URL for openai-compatible provider. [env: OPENAI_BASE_URL]",
 )
 @click.option(
-    "--max-steps", default=10, show_default=True,
-    help="Maximum number of agent reasoning steps.",
+    "--max-steps", type=int,
+    default=lambda: int(os.getenv("MAX_AGENT_STEPS", "10")),
+    show_default=True,
+    help="Maximum number of agent reasoning steps. [env: MAX_AGENT_STEPS]",
 )
 @click.option(
     "--verbose/--quiet", default=True, show_default=True,
@@ -331,24 +349,26 @@ def run(goal, defense, provider, model, base_url, max_steps, verbose):
     help="Defense strategies to test (repeat for multiple, e.g. -d D0 -d D1).",
 )
 @click.option(
-    "--provider", default="mock",
-    help="LLM provider: openai, anthropic, openai-compatible, or mock.",
+    "--provider", default=lambda: os.getenv("LLM_PROVIDER", "mock"),
+    help="LLM provider: openai, anthropic, openai-compatible, or mock. [env: LLM_PROVIDER]",
 )
 @click.option(
-    "--model", default=None,
-    help="Model name (provider-specific).",
+    "--model", default=lambda: os.getenv("OPENAI_MODEL"),
+    help="Model name (provider-specific). [env: OPENAI_MODEL]",
 )
 @click.option(
-    "--base-url", default=None,
-    help="API base URL for openai-compatible provider.",
+    "--base-url", default=lambda: os.getenv("OPENAI_BASE_URL"),
+    help="API base URL for openai-compatible provider. [env: OPENAI_BASE_URL]",
 )
 @click.option(
     "--output", "-o", default="results/", show_default=True,
     help="Output directory for result files.",
 )
 @click.option(
-    "--max-steps", default=10, show_default=True,
-    help="Maximum number of agent reasoning steps per case.",
+    "--max-steps", type=int,
+    default=lambda: int(os.getenv("MAX_AGENT_STEPS", "10")),
+    show_default=True,
+    help="Maximum number of agent reasoning steps per case. [env: MAX_AGENT_STEPS]",
 )
 @click.option(
     "--verbose/--quiet", default=False, show_default=True,

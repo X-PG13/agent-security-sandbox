@@ -1,8 +1,14 @@
 """
 Tool Registry - Centralized management of all tools
 """
+import logging
 from pathlib import Path
 from typing import Dict, List, Optional
+
+from .base import Tool
+from .email import ListEmailsTool, ReadEmailTool, SendEmailTool
+from .file import CreateDocumentTool, ReadFileTool, WriteFileTool
+from .search import SearchWebTool
 
 try:
     import yaml
@@ -10,10 +16,7 @@ try:
 except ImportError:
     YAML_AVAILABLE = False
 
-from .base import Tool
-from .email import ListEmailsTool, ReadEmailTool, SendEmailTool
-from .file import CreateDocumentTool, ReadFileTool, WriteFileTool
-from .search import SearchWebTool
+logger = logging.getLogger(__name__)
 
 
 class ToolRegistry:
@@ -54,7 +57,7 @@ class ToolRegistry:
     def _load_from_config(self, config_path: str):
         """Load tool configurations from YAML file"""
         if not YAML_AVAILABLE:
-            print("Warning: PyYAML not installed. Cannot load config from file.")
+            logger.warning("PyYAML not installed. Cannot load config from file.")
             return
 
         try:
@@ -79,7 +82,7 @@ class ToolRegistry:
                                     param.whitelist = param_config['whitelist']
 
         except Exception as e:
-            print(f"Warning: Failed to load config from {config_path}: {e}")
+            logger.warning("Failed to load config from %s: %s", config_path, e)
 
     def register(self, tool: Tool):
         """Register a tool"""
