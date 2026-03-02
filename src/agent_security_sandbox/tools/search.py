@@ -1,7 +1,7 @@
 """
 Mock Web Search Tool
 """
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from .base import RiskLevel, Tool, ToolMetadata, ToolParameter
 
@@ -69,14 +69,11 @@ class MockSearchDatabase:
         return self.search_results["default"]
 
 
-# Global search database
-search_db = MockSearchDatabase()
-
-
 class SearchWebTool(Tool):
     """Tool to search the web"""
 
-    def __init__(self):
+    def __init__(self, db: Optional[MockSearchDatabase] = None):
+        self._db = db or MockSearchDatabase()
         metadata = ToolMetadata(
             name="search_web",
             description="Search the web for information on a given query",
@@ -106,7 +103,7 @@ class SearchWebTool(Tool):
             }
 
         # Perform search
-        results = search_db.search(query)
+        results = self._db.search(query)
 
         return {
             "status": "success",

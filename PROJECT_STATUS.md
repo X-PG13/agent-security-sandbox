@@ -1,262 +1,79 @@
 # Project Implementation Status
 
-## ✅ Phase 1 Complete: Core Foundation
+## Current Version: v0.2.0
 
-### What We've Built
+## Phase 1 Complete: Core Foundation
 
-The Agent Security Sandbox foundation is now complete! Here's everything that's been implemented:
+- ReAct-based agent framework with configurable LLM backends (OpenAI, Anthropic, OpenAI-compatible, mock)
+- 7 mock tools with risk classification (email x3, file x3, search x1, calendar, API client)
+- Tool registry with automatic parameter validation and whitelist enforcement
+- Complete trajectory recording for evaluation
 
-## 📁 Project Structure (22 Files Created)
+## Phase 2 Complete: Defense Strategies + Evaluation
 
-### Configuration Files (6)
-- ✅ `.env.example` - Environment variables template
-- ✅ `.gitignore` - Git ignore rules
-- ✅ `requirements.txt` - Python dependencies
-- ✅ `config/tools.yaml` - Tool definitions with risk levels
-- ✅ `config/models.yaml` - LLM model configurations
-- ✅ `config/defenses.yaml` - Defense strategy configs
+### Defense Strategies (6 implemented)
+| ID | Strategy | Type | Status |
+|----|----------|------|--------|
+| D0 | Baseline (no defense) | - | Complete |
+| D1 | Spotlighting / source marking | Prompt-layer | Complete |
+| D2 | Policy Gate with whitelists | Tool-gating | Complete |
+| D3 | Task Alignment verification | Tool-gating | Complete |
+| D4 | Re-execution detection | Tool-gating | Complete |
+| D5 | Sandwich defense | Prompt-layer | Complete |
 
-### Documentation (3)
-- ✅ `README.md` - Project overview and quick start
-- ✅ `GETTING_STARTED.md` - Detailed setup and usage guide
-- ✅ `setup.sh` - Automated setup script
+- Composite defense pipeline for combining multiple strategies
+- Defense registry with factory functions and YAML configuration
 
-### Core Implementation (2 modules, ~500 lines)
-- ✅ `src/core/llm_client.py` - LLM client wrapper (~200 lines)
-  - OpenAI client with token tracking
-  - Anthropic client with message conversion
-  - Mock client for testing
-  - Factory pattern for easy switching
-  
-- ✅ `src/core/agent.py` - ReAct Agent implementation (~300 lines)
-  - Full ReAct loop (Thought → Action → Observation)
-  - Trajectory recording for evaluation
-  - Defense strategy integration hooks
-  - Configurable max steps and verbosity
+### Evaluation Framework
+- Benchmark loading from JSONL files (mini_benchmark: 40 cases, full_benchmark: ~200 cases)
+- Rule-based AutoJudge with attack/benign verdict classification
+- LLM-augmented composite judge for quality scoring
+- Metrics: ASR, BSR, FPR, token cost tracking
+- ExperimentRunner with per-case tool isolation and progress callbacks
+- Reporter with Markdown and JSON output
 
-### Tool System (5 modules, ~800 lines)
-- ✅ `src/tools/base.py` - Base classes and metadata (~150 lines)
-  - Risk-level classification (low/medium/high/critical)
-  - Parameter validation with whitelists
-  - Side-effect tracking
-  - OpenAI function schema generation
+### CLI Tool (`asb`)
+- `asb run` -- single task execution with defense selection
+- `asb evaluate` -- batch benchmark evaluation
+- `asb report` -- generate evaluation reports
+- `asb serve` -- launch Streamlit demo UI
 
-- ✅ `src/tools/email.py` - Email tools (~200 lines)
-  - Mock email database with 5 pre-populated emails
-  - read_email, send_email, list_emails tools
-  - Whitelist enforcement for send_email
-  - Includes injected email for testing
+### Real Experiment Results (GPT-4o, mini_benchmark, 40 cases)
 
-- ✅ `src/tools/search.py` - Search tool (~100 lines)
-  - Mock search results database
-  - search_web tool implementation
+| Defense | ASR | BSR | FPR | Tokens |
+|---------|-----|-----|-----|--------|
+| D0 Baseline | 40.00% | 95.00% | 5.00% | 77,370 |
+| D1 Spotlighting | 0.00% | 95.00% | 5.00% | 55,671 |
+| D2 Policy Gate | 30.00% | 85.00% | 15.00% | 61,183 |
+| D3 Task Alignment | 20.00% | 90.00% | 10.00% | 74,615 |
+| D4 Re-execution | 25.00% | 80.00% | 20.00% | 89,498 |
 
-- ✅ `src/tools/file.py` - File tools (~200 lines)
-  - Mock filesystem with pre-populated files
-  - read_file, write_file, create_document tools
-  - Includes confidential files for testing
+Key findings:
+- D1 (Spotlighting) achieves 0% ASR with minimal BSR impact -- strongest single defense
+- D0 baseline shows GPT-4o self-refuses ~60% of attacks without any defense
+- D4 (Re-execution) has highest FPR (20%) and token cost due to double execution
+- Clear security-usability trade-off across D2/D3/D4
 
-- ✅ `src/tools/registry.py` - Tool management (~150 lines)
-  - Centralized tool registration
-  - Risk-based filtering
-  - Function schema generation
-  - Tool execution with error handling
+## Code Statistics
 
-### Testing (1 file, ~200 lines)
-- ✅ `tests/test_basic.py` - Comprehensive test suite
-  - LLM client tests
-  - Tool registry tests
-  - Basic agent execution tests
-  - Injection attack scenario tests
+- **Total source lines**: ~7,100
+- **Source modules**: 20+ Python files across core/, tools/, defenses/, evaluation/, cli/, ui/
+- **Test files**: 16 test files with 160+ test cases
+- **Benchmark cases**: 40 (mini) + ~200 (full)
+- **Defense strategies**: 6 individual + composite pipeline
+- **Mock tools**: 7 (email, file, search, calendar, API)
 
-## 🎯 Key Features Implemented
+## Infrastructure
 
-### 1. Multi-Provider LLM Support
-- OpenAI (GPT-3.5, GPT-4)
-- Anthropic (Claude 3 family)
-- Mock client for testing without API keys
+- Docker support (Dockerfile + docker-compose)
+- CI-ready configuration (pytest, ruff, mypy)
+- Full documentation (architecture, configuration, defenses, evaluation)
+- Experiment scripts (baseline, ablation, model comparison)
 
-### 2. Risk-Aware Tool System
-- 7 mock tools with risk classification
-- Automatic parameter validation
-- Whitelist enforcement (e.g., email recipients)
-- Side-effect tracking
+## Next Steps (Phase 3+)
 
-### 3. ReAct Agent
-- Full reasoning and acting loop
-- JSON parameter parsing
-- Error handling and recovery
-- Complete trajectory logging
-
-### 4. Pre-Populated Test Data
-- 5 emails (including 1 with injection attack)
-- 5 files (including confidential data)
-- Mock search results
-- Ready for immediate testing
-
-### 5. Defense Integration
-- System prompt preparation hooks
-- Tool call approval hooks
-- Decision logging for analysis
-
-## 📊 Code Statistics
-
-- **Total Lines of Code**: ~1,700
-- **Core Modules**: 2
-- **Tool Modules**: 5
-- **Config Files**: 3
-- **Tests**: 4 test functions
-- **Mock Tools**: 7 (email×3, search×1, file×3)
-
-## 🔄 What's Next (Phase 2)
-
-### Week 2-3: Defense Strategies
-- [ ] Implement D0 (Baseline - no defense)
-- [ ] Implement D1 (Spotlighting - source marking)
-- [ ] Implement D2 (Policy Gate - permission control)
-- [ ] Implement D3 (Task Alignment - goal verification)
-- [ ] Implement D4 (Re-execution - drift detection)
-
-### Week 4-5: Evaluation System
-- [ ] Create mini-benchmark (30-50 test cases)
-- [ ] Implement automatic judge
-- [ ] Implement metrics calculator (ASR, BSR, FPR, Cost)
-- [ ] Create batch evaluation script
-
-### Week 6-7: Experiments & Results
-- [ ] Run baseline experiments (D0-D4)
-- [ ] Generate comparison tables
-- [ ] Create visualization plots
-- [ ] Ablation studies
-
-### Week 8: Demo & Documentation
-- [ ] Streamlit demo UI
-- [ ] Audit trail visualization
-- [ ] Final documentation
-- [ ] Presentation slides
-
-## 🚀 How to Use What We've Built
-
-### Quick Test (No dependencies needed - uses Mock LLM)
-```python
-cd "/Users/zhaoyifan/Desktop/prompt injection/agent-security-sandbox"
-
-python3 << 'PYEOF'
-import sys
-sys.path.insert(0, "src")
-
-from core.llm_client import create_llm_client
-from tools.registry import ToolRegistry
-from core.agent import ReactAgent
-
-# Create mock components
-llm = create_llm_client("mock")
-llm.set_mock_response("""Thought: I should read the email.
-Action: read_email
-Action Input: {"email_id": "email_001"}""")
-
-tools = ToolRegistry()
-agent = ReactAgent(llm, tools, verbose=True)
-
-# Run agent
-trajectory = agent.run(goal="Read email_001 and summarize it")
-print(f"\nFinal Answer: {trajectory.final_answer}")
-print(f"Total Steps: {trajectory.total_steps}")
-print(f"Total Tokens: {trajectory.total_tokens}")
-PYEOF
-```
-
-### Test Email Whitelist (Shows defense in action)
-```python
-python3 << 'PYEOF'
-import sys
-sys.path.insert(0, "src")
-
-from tools.registry import ToolRegistry
-
-registry = ToolRegistry()
-
-# Try to send to attacker (should fail)
-result = registry.execute_tool(
-    "send_email",
-    to="attacker@evil.com",
-    subject="Confidential",
-    body="Secret data"
-)
-print(f"Sending to attacker: {result['status']}")
-print(f"Message: {result['message']}")
-
-# Send to allowed recipient (should succeed)
-result = registry.execute_tool(
-    "send_email",
-    to="user@company.com",
-    subject="Normal",
-    body="Normal email"
-)
-print(f"\nSending to user: {result['status']}")
-PYEOF
-```
-
-## 🎯 Current Capabilities
-
-Your sandbox can already:
-1. ✅ Execute multi-step ReAct agents with mock LLM
-2. ✅ Call 7 different tools with automatic risk checking
-3. ✅ Enforce whitelists on high-risk operations
-4. ✅ Record complete execution trajectories
-5. ✅ Test injection scenarios with pre-made emails
-6. ✅ Switch between OpenAI/Anthropic/Mock LLMs easily
-7. ✅ Validate tool parameters automatically
-
-## 📈 Project Health
-
-- **Architecture**: ✅ Clean, modular design
-- **Testing**: ✅ Comprehensive test coverage
-- **Documentation**: ✅ Well-documented code and setup
-- **Extensibility**: ✅ Easy to add new tools/defenses
-- **Reproducibility**: ✅ Mock tools ensure consistent testing
-
-## 💡 Design Highlights
-
-1. **Separation of Concerns**: Core, Tools, Defenses, Evaluation are independent
-2. **Risk-First**: Every tool has a risk level and validation rules
-3. **Mock-First**: All tools are mocked for reproducible research
-4. **Defense-Ready**: Hooks for defense strategies are already in place
-5. **Evaluation-Ready**: Trajectory recording enables automatic judging
-
-## 🎓 Ready for Your Thesis
-
-This foundation supports all your thesis requirements:
-- ✅ Reproducible security evaluation
-- ✅ Multiple defense strategies (ready to implement)
-- ✅ Automatic metrics calculation (infrastructure ready)
-- ✅ Policy-based tool control
-- ✅ Complete audit trails
-
-**You've completed about 30% of the total project!** The hardest architectural decisions are done. The rest is implementing defense strategies and running experiments.
-
----
-
-## Next Immediate Steps
-
-1. **Install dependencies** (if you want to run tests):
-   ```bash
-   python3 -m pip install --user pydantic pyyaml
-   ```
-
-2. **Run the test suite**:
-   ```bash
-   python3 tests/test_basic.py
-   ```
-
-3. **Start implementing defenses**:
-   - Create `src/defenses/base.py` with defense interface
-   - Implement D0-D2 first (easiest and most impactful)
-
-4. **Create first benchmark cases**:
-   - Create 5 benign cases in `data/mini_benchmark/benign.jsonl`
-   - Create 5 attack cases in `data/mini_benchmark/attack.jsonl`
-
-See `docs/development_roadmap.md` for the complete plan!
-
-**Great work! The foundation is solid. Keep going! 🚀**
+1. **Full-scale experiments**: 3+ models x 6 defenses x 3 runs x 200 cases
+2. **Defense composition study**: Test combined defense strategies
+3. **Statistical analysis**: Confidence intervals, significance tests
+4. **Publication-quality figures**: ACL/NeurIPS-standard visualizations
+5. **Paper writing**: Targeting top security/NLP venues

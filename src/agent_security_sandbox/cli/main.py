@@ -182,6 +182,30 @@ def _load_defense_config(defense_id: str) -> dict:
         return {}
 
 
+def _serialize_experiment_result(result) -> dict:
+    """Convert an ExperimentResult to a JSON-serialisable dictionary.
+
+    Handles enum members (e.g. JudgeVerdict) and dataclass fields
+    that are not natively JSON-serialisable.
+    """
+    from enum import Enum
+
+    def _safe(obj):
+        if obj is None or isinstance(obj, (bool, int, float, str)):
+            return obj
+        if isinstance(obj, Enum):
+            return obj.value
+        if isinstance(obj, dict):
+            return {k: _safe(v) for k, v in obj.items()}
+        if isinstance(obj, (list, tuple)):
+            return [_safe(v) for v in obj]
+        if hasattr(obj, "__dict__"):
+            return {k: _safe(v) for k, v in vars(obj).items() if not k.startswith("_")}
+        return str(obj)
+
+    return _safe(result)
+
+
 def _build_defense(defense_id: str, llm_client=None):
     """Construct a defense strategy from its ID (e.g. ``"D0"``).
 
@@ -341,8 +365,12 @@ def run(goal, defense, provider, model, base_url, max_steps, verbose):
 
 @cli.command()
 @click.option(
-    "--benchmark", "-b", required=True,
+    "--benchmark", "-b", default=None,
     help="Path to benchmark directory containing .jsonl files.",
+)
+@click.option(
+    "--suite", type=click.Choice(["mini", "full"]), default=None,
+    help="Shortcut: 'mini' -> data/mini_benchmark, 'full' -> data/full_benchmark.",
 )
 @click.option(
     "--defense", "-d", multiple=True, default=["D0"],
@@ -371,10 +399,20 @@ def run(goal, defense, provider, model, base_url, max_steps, verbose):
     help="Maximum number of agent reasoning steps per case. [env: MAX_AGENT_STEPS]",
 )
 @click.option(
+    "--judge", "judge_mode",
+    type=click.Choice(["rule", "llm", "both"]),
+    default="rule", show_default=True,
+    help="Judge mode: 'rule' (AutoJudge), 'llm' (LLMJudge), or 'both' (CompositeJudge).",
+)
+@click.option(
+    "--analyze/--no-analyze", default=False, show_default=True,
+    help="Run statistical analysis (CIs, breakdowns, McNemar's test).",
+)
+@click.option(
     "--verbose/--quiet", default=False, show_default=True,
     help="Enable step-by-step output for every case.",
 )
-def evaluate(benchmark, defense, provider, model, base_url, output, max_steps, verbose):
+def evaluate(benchmark, suite, defense, provider, model, base_url, output, max_steps, judge_mode, analyze, verbose):
     """Run benchmark evaluation with specified defenses.
 
     Loads all .jsonl benchmark cases from the BENCHMARK directory and
@@ -383,12 +421,24 @@ def evaluate(benchmark, defense, provider, model, base_url, output, max_steps, v
 
     Examples:
 
-      asb evaluate -b data/benchmarks -d D0 -d D1 --provider mock
+      asb evaluate --suite mini -d D0 -d D1 --provider mock
 
       asb evaluate -b data/benchmarks -d D0 -d D1 -d D2 \
         --provider openai --model gpt-4o -o results/exp01
     """
-    # -- Validate benchmark path --------------------------------------------
+    # -- Resolve benchmark path via --suite shortcut or --benchmark ---------
+    if benchmark is None and suite is not None:
+        repo_root = Path(__file__).resolve().parents[3]
+        suite_map = {
+            "mini": repo_root / "data" / "mini_benchmark",
+            "full": repo_root / "data" / "full_benchmark",
+        }
+        benchmark = str(suite_map[suite])
+    elif benchmark is None:
+        raise click.ClickException(
+            "Either --benchmark or --suite must be provided."
+        )
+
     benchmark_path = Path(benchmark)
     if not benchmark_path.is_dir():
         raise click.ClickException(f"Benchmark directory not found: {benchmark}")
@@ -421,6 +471,35 @@ def evaluate(benchmark, defense, provider, model, base_url, output, max_steps, v
     def _make_registry():
         return tool_registry_cls(config_path=tools_config_path)
 
+    # -- Build judge -----------------------------------------------------------
+    judge = None  # default: AutoJudge (rule-based)
+    if judge_mode in ("llm", "both"):
+        if provider == "mock":
+            click.echo(
+                "[WARNING] LLM judge requires a real LLM provider; "
+                "falling back to rule-based judge.",
+                err=True,
+            )
+            judge_mode = "rule"
+        else:
+            try:
+                judge_llm = _build_llm_client(provider, model, base_url)
+            except Exception as exc:
+                raise click.ClickException(
+                    f"Failed to create LLM client for judge: {exc}"
+                )
+
+    if judge_mode == "llm":
+        from agent_security_sandbox.evaluation.llm_judge import LLMJudge
+        judge = LLMJudge(judge_llm)
+        click.echo("Judge: LLM-based")
+    elif judge_mode == "both":
+        from agent_security_sandbox.evaluation.composite_judge import CompositeJudge
+        judge = CompositeJudge(judge_llm)
+        click.echo("Judge: Composite (rule + LLM)")
+    else:
+        click.echo("Judge: Rule-based")
+
     # -- Run experiments for each defense -----------------------------------
     experiment_runner_cls = _import_experiment_runner()
     all_results = []
@@ -446,6 +525,7 @@ def evaluate(benchmark, defense, provider, model, base_url, output, max_steps, v
                 defense_strategy=defense_strategy,
                 max_steps=max_steps,
                 verbose=verbose,
+                judge=judge,
             )
             results = runner.run_suite(suite)
             all_results.append({
@@ -455,13 +535,9 @@ def evaluate(benchmark, defense, provider, model, base_url, output, max_steps, v
 
             # Persist per-defense results
             result_file = output_dir / f"results_{defense_id}.json"
+            serialised = _serialize_experiment_result(results)
             with open(result_file, "w", encoding="utf-8") as fh:
-                json.dump(
-                    {"defense": defense_id, "results": results},
-                    fh,
-                    indent=2,
-                    default=str,
-                )
+                json.dump(serialised, fh, indent=2, ensure_ascii=False)
             click.echo(f"  Results saved to {result_file}")
 
         except Exception as exc:
@@ -483,6 +559,27 @@ def evaluate(benchmark, defense, provider, model, base_url, output, max_steps, v
             click.echo(f"\nReport saved to {report_file}")
         except Exception as exc:
             click.echo(f"\n[WARNING] Could not generate report: {exc}", err=True)
+
+    # -- Statistical analysis (optional) ------------------------------------
+    if analyze and all_results:
+        try:
+            from agent_security_sandbox.evaluation.analysis import StatisticalAnalyzer
+
+            analyzer = StatisticalAnalyzer()
+            experiment_results = [r["results"] for r in all_results]
+            analysis_report = analyzer.analyze(experiment_results)
+
+            reporter_cls = _import_reporter()
+            reporter = reporter_cls()
+            analysis_md = reporter.generate_analysis_markdown(analysis_report)
+            analysis_file = output_dir / "analysis.md"
+            reporter.save_report(analysis_md, str(analysis_file))
+            click.echo(f"Analysis saved to {analysis_file}")
+        except Exception as exc:
+            click.echo(
+                f"\n[WARNING] Could not run statistical analysis: {exc}",
+                err=True,
+            )
 
     click.echo("\nEvaluation complete.")
 
@@ -542,6 +639,45 @@ def report(results_dir, fmt, output):
     if not all_results:
         raise click.ClickException("No valid result files could be loaded.")
 
+    # -- Reconstruct ExperimentResult-like objects from loaded JSON ----------
+    from agent_security_sandbox.evaluation.runner import ExperimentResult
+    from agent_security_sandbox.evaluation.metrics import EvaluationMetrics
+    from agent_security_sandbox.evaluation.judge import JudgeResult, JudgeVerdict
+
+    def _reconstruct(data: dict) -> ExperimentResult:
+        """Best-effort reconstruction of ExperimentResult from a dict."""
+        m = data.get("metrics", {})
+        metrics = EvaluationMetrics(
+            asr=m.get("asr", 0.0),
+            bsr=m.get("bsr", 0.0),
+            fpr=m.get("fpr", 0.0),
+            total_cost=m.get("total_cost", 0),
+            num_cases=m.get("num_cases", 0),
+            attack_cases=m.get("attack_cases", 0),
+            benign_cases=m.get("benign_cases", 0),
+            details=m.get("details", {}),
+        )
+        results_list = []
+        for r in data.get("results", []):
+            try:
+                verdict = JudgeVerdict(r.get("verdict", "attack_blocked"))
+            except ValueError:
+                verdict = JudgeVerdict.ATTACK_BLOCKED
+            results_list.append(JudgeResult(
+                verdict=verdict,
+                case_id=r.get("case_id", "unknown"),
+                reason=r.get("reason", ""),
+                details=r.get("details", {}),
+            ))
+        return ExperimentResult(
+            defense_name=data.get("defense_name", "unknown"),
+            results=results_list,
+            metrics=metrics,
+            timestamp=data.get("timestamp", ""),
+        )
+
+    experiment_results = [_reconstruct(d) for d in all_results]
+
     # -- Generate report ----------------------------------------------------
     reporter_cls = _import_reporter()
     try:
@@ -551,7 +687,7 @@ def report(results_dir, fmt, output):
             "json": reporter.generate_json,
             "csv": reporter.generate_csv,
         }
-        report_text = fmt_method[fmt](all_results)
+        report_text = fmt_method[fmt](experiment_results)
     except Exception as exc:
         raise click.ClickException(f"Failed to generate report: {exc}")
 

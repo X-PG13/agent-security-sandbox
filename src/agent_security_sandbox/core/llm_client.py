@@ -20,6 +20,8 @@ class LLMClient(ABC):
         self.temperature = temperature
         self.total_tokens = 0
         self.total_calls = 0
+        self.prompt_tokens = 0
+        self.completion_tokens = 0
 
     @abstractmethod
     def call(
@@ -38,13 +40,17 @@ class LLMClient(ABC):
         """Get usage statistics"""
         return {
             "total_calls": self.total_calls,
-            "total_tokens": self.total_tokens
+            "total_tokens": self.total_tokens,
+            "prompt_tokens": self.prompt_tokens,
+            "completion_tokens": self.completion_tokens,
         }
 
     def reset_stats(self):
         """Reset usage statistics"""
         self.total_tokens = 0
         self.total_calls = 0
+        self.prompt_tokens = 0
+        self.completion_tokens = 0
 
 
 class OpenAIClient(LLMClient):
@@ -91,9 +97,17 @@ class OpenAIClient(LLMClient):
             tokens_used = (
                 response.usage.total_tokens if response.usage else 0
             )
+            _prompt = (
+                response.usage.prompt_tokens if response.usage else 0
+            )
+            _completion = (
+                response.usage.completion_tokens if response.usage else 0
+            )
 
             self.total_calls += 1
             self.total_tokens += tokens_used
+            self.prompt_tokens += _prompt
+            self.completion_tokens += _completion
 
             return content, tokens_used
 
@@ -209,10 +223,14 @@ class AnthropicClient(LLMClient):
             else:
                 content = ""
             # Anthropic returns input_tokens and output_tokens separately
-            tokens_used = response.usage.input_tokens + response.usage.output_tokens
+            _prompt = response.usage.input_tokens
+            _completion = response.usage.output_tokens
+            tokens_used = _prompt + _completion
 
             self.total_calls += 1
             self.total_tokens += tokens_used
+            self.prompt_tokens += _prompt
+            self.completion_tokens += _completion
 
             return content, tokens_used
 
@@ -440,6 +458,21 @@ class ScenarioMockLLMClient(MockLLMClient):
         ):
             tools.append("create_document")
 
+        # Calendar tools
+        if "calendar" in lower or "event" in lower or "schedule" in lower:
+            if "create" in lower or "add" in lower or "schedule" in lower:
+                tools.append("create_calendar_event")
+            if "read" in lower or "check" in lower or "event_" in lower:
+                tools.append("read_calendar")
+            if not tools or tools[-1] not in ("create_calendar_event", "read_calendar"):
+                tools.append("read_calendar")
+
+        # API tools
+        if "api" in lower and ("call" in lower or "get" in lower or "fetch" in lower):
+            tools.append("call_api")
+        if "api" in lower and ("post" in lower or "send" in lower or "submit" in lower):
+            tools.append("post_api")
+
         # Deduplicate while preserving order
         seen: set = set()
         unique: List[str] = []
@@ -523,6 +556,36 @@ class ScenarioMockLLMClient(MockLLMClient):
                 "Action: create_document\n"
                 f'Action Input: {{"title": "{title}", '
                 f'"content": "Generated document content."}}'
+            )
+
+        if tool_name == "read_calendar":
+            return (
+                "Thought: I need to read the calendar event.\n"
+                "Action: read_calendar\n"
+                'Action Input: {"event_id": "event_001"}'
+            )
+
+        if tool_name == "create_calendar_event":
+            return (
+                "Thought: I need to create a calendar event.\n"
+                "Action: create_calendar_event\n"
+                'Action Input: {"title": "Meeting", "date": "2024-01-20", '
+                '"time": "10:00", "description": "Scheduled meeting"}'
+            )
+
+        if tool_name == "call_api":
+            return (
+                "Thought: I need to call the API.\n"
+                "Action: call_api\n"
+                'Action Input: {"endpoint": "/api/weather"}'
+            )
+
+        if tool_name == "post_api":
+            return (
+                "Thought: I need to post data to the API.\n"
+                "Action: post_api\n"
+                'Action Input: {"endpoint": "/api/data", '
+                '"data": "{\\"key\\": \\"value\\"}"}'
             )
 
         # Fallback

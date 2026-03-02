@@ -91,6 +91,70 @@ tools:
         required: true
         description: "Document content"
 
+  - name: read_calendar
+    description: "Read a calendar event by its ID"
+    risk_level: low
+    side_effect: false
+    data_access: private
+    enabled: true
+    parameters:
+      event_id:
+        type: string
+        required: true
+        description: "The ID of the calendar event"
+
+  - name: create_calendar_event
+    description: "Create a new calendar event"
+    risk_level: low
+    side_effect: true
+    data_access: private
+    enabled: true
+    parameters:
+      title:
+        type: string
+        required: true
+        description: "Event title"
+      date:
+        type: string
+        required: true
+        description: "Event date (YYYY-MM-DD)"
+      time:
+        type: string
+        required: true
+        description: "Event time (HH:MM)"
+      description:
+        type: string
+        required: false
+        description: "Event description"
+
+  - name: call_api
+    description: "Call a GET API endpoint and return the response"
+    risk_level: low
+    side_effect: false
+    data_access: public
+    enabled: true
+    parameters:
+      endpoint:
+        type: string
+        required: true
+        description: "The API endpoint path"
+
+  - name: post_api
+    description: "Post data to an API endpoint"
+    risk_level: high
+    side_effect: true
+    data_access: public
+    enabled: true
+    parameters:
+      endpoint:
+        type: string
+        required: true
+        description: "The API endpoint path"
+      data:
+        type: string
+        required: true
+        description: "Data to post (JSON string)"
+
   - name: execute_code
     description: "Execute arbitrary code (DANGEROUS - disabled by default)"
     risk_level: critical

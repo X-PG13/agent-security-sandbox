@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Run baseline defense evaluations (D0 through D4).
+Run baseline defense evaluations (D0 through D5).
 
 Evaluates each individual defense strategy against the benchmark suite and
 produces per-defense results, a combined JSON output, and a Markdown report.
@@ -46,12 +46,12 @@ from agent_security_sandbox.evaluation.reporter import Reporter
 # ---------------------------------------------------------------------------
 # Defense identifiers to evaluate
 # ---------------------------------------------------------------------------
-DEFENSE_IDS: List[str] = ["D0", "D1", "D2", "D3", "D4"]
+DEFENSE_IDS: List[str] = ["D0", "D1", "D2", "D3", "D4", "D5"]
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run baseline evaluation for each defense strategy (D0-D4).",
+        description="Run baseline evaluation for each defense strategy (D0-D5).",
     )
     parser.add_argument(
         "--benchmark-dir",
@@ -97,11 +97,33 @@ def _build_llm_kwargs(args: argparse.Namespace) -> Dict[str, Any]:
     return kwargs
 
 
+def _make_json_safe(obj: Any) -> Any:
+    """Recursively convert non-serialisable objects for JSON output.
+
+    Handles ``Enum`` members (e.g. ``JudgeVerdict``) by extracting their
+    ``.value``, and falls through to ``str()`` for anything else unknown.
+    """
+    from enum import Enum
+
+    if obj is None or isinstance(obj, (bool, int, float, str)):
+        return obj
+    if isinstance(obj, Enum):
+        return obj.value
+    if isinstance(obj, dict):
+        return {k: _make_json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_make_json_safe(v) for v in obj]
+    # Fallback for dataclasses and other objects
+    if hasattr(obj, "__dict__"):
+        return {k: _make_json_safe(v) for k, v in vars(obj).items() if not k.startswith("_")}
+    return str(obj)
+
+
 def _serialize_result(result: Any) -> Dict[str, Any]:
     """Convert an ExperimentResult to a JSON-serialisable dictionary.
 
-    ``ExperimentResult`` may contain non-serialisable objects so we do a
-    best-effort conversion.
+    ``ExperimentResult`` may contain non-serialisable objects (such as
+    ``JudgeVerdict`` enums) so we do a recursive conversion.
     """
     data: Dict[str, Any] = {
         "defense_name": getattr(result, "defense_name", str(result)),
@@ -112,14 +134,11 @@ def _serialize_result(result: Any) -> Dict[str, Any]:
     metrics = getattr(result, "metrics", None)
     if metrics is not None:
         if isinstance(metrics, dict):
-            data["metrics"] = metrics
+            data["metrics"] = _make_json_safe(metrics)
         else:
-            # Assume dataclass / object with __dict__
-            data["metrics"] = {
-                k: v
-                for k, v in vars(metrics).items()
-                if not k.startswith("_")
-            }
+            data["metrics"] = _make_json_safe(
+                {k: v for k, v in vars(metrics).items() if not k.startswith("_")}
+            )
     else:
         data["metrics"] = {}
 
@@ -128,10 +147,12 @@ def _serialize_result(result: Any) -> Dict[str, Any]:
     serialised_results: List[Dict[str, Any]] = []
     for r in results_list:
         if isinstance(r, dict):
-            serialised_results.append(r)
+            serialised_results.append(_make_json_safe(r))
         else:
             serialised_results.append(
-                {k: v for k, v in vars(r).items() if not k.startswith("_")}
+                _make_json_safe(
+                    {k: v for k, v in vars(r).items() if not k.startswith("_")}
+                )
             )
     data["results"] = serialised_results
 

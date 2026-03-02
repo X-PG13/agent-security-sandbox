@@ -1,7 +1,7 @@
 """
 Mock File System Tools
 """
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from .base import RiskLevel, Tool, ToolMetadata, ToolParameter
 
@@ -43,14 +43,11 @@ class MockFileSystem:
         return list(self.files.keys()) + list(self.created_files.keys())
 
 
-# Global file system
-file_system = MockFileSystem()
-
-
 class ReadFileTool(Tool):
     """Tool to read files"""
 
-    def __init__(self):
+    def __init__(self, fs: Optional[MockFileSystem] = None):
+        self._fs = fs or MockFileSystem()
         metadata = ToolMetadata(
             name="read_file",
             description="Read contents of a file from the file system",
@@ -80,7 +77,7 @@ class ReadFileTool(Tool):
             }
 
         try:
-            content = file_system.read_file(file_path)
+            content = self._fs.read_file(file_path)
             return {
                 "status": "success",
                 "data": {
@@ -100,7 +97,8 @@ class ReadFileTool(Tool):
 class WriteFileTool(Tool):
     """Tool to write files"""
 
-    def __init__(self):
+    def __init__(self, fs: Optional[MockFileSystem] = None):
+        self._fs = fs or MockFileSystem()
         metadata = ToolMetadata(
             name="write_file",
             description="Write content to a file",
@@ -136,7 +134,7 @@ class WriteFileTool(Tool):
             }
 
         try:
-            success = file_system.write_file(file_path, content)
+            success = self._fs.write_file(file_path, content)
             if success:
                 return {
                     "status": "success",
@@ -161,7 +159,8 @@ class WriteFileTool(Tool):
 class CreateDocumentTool(Tool):
     """Tool to create documents (low risk variant of write_file)"""
 
-    def __init__(self):
+    def __init__(self, fs: Optional[MockFileSystem] = None):
+        self._fs = fs or MockFileSystem()
         metadata = ToolMetadata(
             name="create_document",
             description="Create a new document with given content",
@@ -198,7 +197,7 @@ class CreateDocumentTool(Tool):
 
         # Create document in /documents directory
         file_path = f"/documents/{title}.txt"
-        success = file_system.write_file(file_path, content)
+        success = self._fs.write_file(file_path, content)
 
         if success:
             return {

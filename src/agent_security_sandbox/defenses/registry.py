@@ -24,6 +24,7 @@ from .d1_spotlighting import SpotlightingDefense
 from .d2_policy_gate import PolicyGateDefense
 from .d3_task_alignment import TaskAlignmentDefense
 from .d4_reexecution import ReExecutionDefense
+from .d5_sandwich import SandwichDefense
 
 # Map defense IDs to their implementation classes.
 _DEFENSE_CLASSES: Dict[str, type] = {
@@ -32,6 +33,7 @@ _DEFENSE_CLASSES: Dict[str, type] = {
     "D2": PolicyGateDefense,
     "D3": TaskAlignmentDefense,
     "D4": ReExecutionDefense,
+    "D5": SandwichDefense,
 }
 
 
@@ -43,7 +45,8 @@ def create_defense(
     """Create a single defense strategy by its ID.
 
     Args:
-        defense_id: One of ``"D0"``, ``"D1"``, ``"D2"``, ``"D3"``, ``"D4"``.
+        defense_id: One of ``"D0"``--``"D5"``, or variant IDs like
+            ``"D1_datamarking"``, ``"D1_encoding"``.
         config: Optional configuration dictionary for the defense.
         llm_client: Optional ``LLMClient`` instance (used by D3 and D4).
 
@@ -54,6 +57,13 @@ def create_defense(
         ValueError: If *defense_id* is not recognised.
     """
     defense_id_upper = defense_id.upper()
+
+    # Handle D1 variant IDs (D1_DATAMARKING, D1_ENCODING)
+    if defense_id_upper.startswith("D1_"):
+        variant = defense_id_upper.split("_", 1)[1].lower()
+        merged_config = dict(config or {})
+        merged_config.setdefault("variant", variant)
+        return SpotlightingDefense(config=merged_config)
 
     cls = _DEFENSE_CLASSES.get(defense_id_upper)
     if cls is None:

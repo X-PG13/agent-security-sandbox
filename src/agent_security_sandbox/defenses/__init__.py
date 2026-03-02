@@ -7,6 +7,7 @@ from .d1_spotlighting import SpotlightingDefense
 from .d2_policy_gate import PolicyGateDefense
 from .d3_task_alignment import TaskAlignmentDefense
 from .d4_reexecution import ReExecutionDefense
+from .d5_sandwich import SandwichDefense
 from .registry import create_composite_defense, create_defense, load_defenses_from_yaml
 
 __all__ = [
@@ -18,6 +19,7 @@ __all__ = [
     "PolicyGateDefense",
     "TaskAlignmentDefense",
     "ReExecutionDefense",
+    "SandwichDefense",
     "CompositeDefense",
     "create_defense",
     "create_composite_defense",

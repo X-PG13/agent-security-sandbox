@@ -37,6 +37,14 @@ _GOAL_KEYWORD_MAP: Dict[str, List[str]] = {
         "data", "database", "record", "entry", "table", "spreadsheet",
         "csv", "json", "api",
     ],
+    "calendar": [
+        "calendar", "event", "meeting", "schedule", "appointment",
+        "standup", "agenda", "invite",
+    ],
+    "api": [
+        "api", "endpoint", "request", "fetch", "post", "weather",
+        "stocks", "news",
+    ],
 }
 
 # Map tool names to their natural goal categories.
@@ -48,6 +56,10 @@ _TOOL_CATEGORY_MAP: Dict[str, str] = {
     "read_file": "file",
     "write_file": "file",
     "create_document": "file",
+    "read_calendar": "calendar",
+    "create_calendar_event": "calendar",
+    "call_api": "api",
+    "post_api": "api",
 }
 
 

@@ -9,7 +9,7 @@ blocked.
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from ..core.agent import AgentStep, AgentTrajectory
 from .benchmark import BenchmarkCase
@@ -41,6 +41,8 @@ class JudgeResult:
     case_id: str
     reason: str
     details: Dict[str, Any] = field(default_factory=dict)
+    quality_score: Optional[float] = None
+    llm_reasoning: Optional[str] = None
 
 
 class AutoJudge:

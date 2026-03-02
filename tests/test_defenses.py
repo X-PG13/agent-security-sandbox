@@ -7,6 +7,7 @@ from agent_security_sandbox.defenses.d1_spotlighting import SpotlightingDefense
 from agent_security_sandbox.defenses.d2_policy_gate import PolicyGateDefense
 from agent_security_sandbox.defenses.d3_task_alignment import TaskAlignmentDefense
 from agent_security_sandbox.defenses.d4_reexecution import ReExecutionDefense
+from agent_security_sandbox.defenses.d5_sandwich import SandwichDefense
 from agent_security_sandbox.defenses.registry import create_defense
 from agent_security_sandbox.tools.registry import ToolRegistry
 
@@ -208,7 +209,7 @@ def test_composite_prepare_context():
 
 # Registry Tests
 def test_create_defense_factory():
-    for did in ["D0", "D1", "D2", "D3", "D4"]:
+    for did in ["D0", "D1", "D2", "D3", "D4", "D5"]:
         defense = create_defense(did)
         assert defense is not None
         assert hasattr(defense, "prepare_context")
@@ -218,3 +219,88 @@ def test_create_defense_factory():
 def test_create_defense_unknown():
     with pytest.raises(ValueError, match="Unknown defense"):
         create_defense("D99")
+
+
+# D1 Variant Tests
+def test_d1_datamarking_context():
+    defense = SpotlightingDefense(config={"variant": "datamarking", "datamark_char": "^"})
+    result = defense.prepare_context("Read email", "Hello")
+    # "Hello" should become "H^e^l^l^o"
+    assert "H^e^l^l^o" in result
+    assert "datamarked" in result
+
+
+def test_d1_encoding_context():
+    import base64
+    defense = SpotlightingDefense(config={"variant": "encoding"})
+    result = defense.prepare_context("Read email", "Dangerous content")
+    encoded = base64.b64encode(b"Dangerous content").decode("ascii")
+    assert encoded in result
+    assert "base64" in result.lower()
+
+
+def test_d1_invalid_variant():
+    with pytest.raises(ValueError, match="Unknown spotlighting variant"):
+        SpotlightingDefense(config={"variant": "nonexistent"})
+
+
+def test_d1_variant_factory():
+    d = create_defense("D1_datamarking")
+    assert isinstance(d, SpotlightingDefense)
+    assert d.variant == "datamarking"
+
+    d2 = create_defense("D1_encoding")
+    assert isinstance(d2, SpotlightingDefense)
+    assert d2.variant == "encoding"
+
+
+def test_d1_delimiter_is_default():
+    defense = SpotlightingDefense()
+    assert defense.variant == "delimiter"
+    result = defense.prepare_context("goal", "content")
+    assert "<<UNTRUSTED CONTENT START>>" in result
+
+
+# D5 Sandwich Tests
+def test_d5_sandwich_context():
+    defense = SandwichDefense()
+    result = defense.prepare_context("Read email", "Dangerous content")
+    # Goal at top
+    assert result.startswith("Read email")
+    # Untrusted content in the middle
+    assert "Dangerous content" in result
+    # Reminder at the bottom with the goal repeated
+    assert "REMINDER:" in result
+    assert result.rstrip().endswith("Read email")
+
+
+def test_d5_sandwich_warning():
+    defense = SandwichDefense(config={"add_warning": True})
+    result = defense.prepare_context("goal", "content")
+    assert "WARNING:" in result
+
+
+def test_d5_sandwich_no_warning():
+    defense = SandwichDefense(config={"add_warning": False})
+    result = defense.prepare_context("goal", "content")
+    assert "WARNING:" not in result
+
+
+def test_d5_sandwich_no_delimiters():
+    defense = SandwichDefense(config={"use_delimiters": False})
+    result = defense.prepare_context("goal", "content")
+    assert "<<UNTRUSTED CONTENT START>>" not in result
+
+
+def test_d5_does_not_block_tools(registry):
+    defense = SandwichDefense()
+    tool = registry.get_tool("send_email")
+    allowed, _ = defense.should_allow_tool_call(
+        tool, {"to": "anyone"}, {"goal": "test", "step": 1}
+    )
+    assert allowed is True
+
+
+def test_d5_factory():
+    defense = create_defense("D5")
+    assert isinstance(defense, SandwichDefense)

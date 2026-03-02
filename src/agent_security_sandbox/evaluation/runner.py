@@ -31,6 +31,8 @@ class ExperimentResult:
             *results*).
         metrics: Aggregated :class:`EvaluationMetrics`.
         timestamp: ISO-formatted timestamp of when the experiment finished.
+        cases: Per-case :class:`BenchmarkCase` list (same order as *results*).
+        token_details: Optional breakdown of prompt vs completion tokens.
     """
 
     defense_name: str
@@ -38,6 +40,8 @@ class ExperimentResult:
     trajectories: List[AgentTrajectory] = field(default_factory=list)
     metrics: EvaluationMetrics = field(default_factory=EvaluationMetrics)
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
+    cases: List[BenchmarkCase] = field(default_factory=list)
+    token_details: dict = field(default_factory=dict)
 
 
 class ExperimentRunner:
@@ -61,13 +65,14 @@ class ExperimentRunner:
         defense_strategy: Optional[DefenseStrategy] = None,
         max_steps: int = 10,
         verbose: bool = False,
+        judge: Optional[object] = None,
     ) -> None:
         self.llm_client = llm_client
         self.tool_registry_factory = tool_registry_factory
         self.defense_strategy = defense_strategy
         self.max_steps = max_steps
         self.verbose = verbose
-        self._judge = AutoJudge()
+        self._judge = judge if judge is not None else AutoJudge()
         self._metrics_calc = MetricsCalculator()
 
     # ------------------------------------------------------------------
@@ -137,6 +142,9 @@ class ExperimentRunner:
         cases = suite.cases
         total = len(cases)
 
+        # Capture LLM stats before the suite to compute deltas
+        pre_stats = self.llm_client.get_stats()
+
         for idx, case in enumerate(cases):
             if progress_callback is not None:
                 progress_callback(idx, total, case)
@@ -148,6 +156,15 @@ class ExperimentRunner:
 
         # Compute aggregate metrics
         metrics = self._metrics_calc.calculate(all_results, total_tokens=total_tokens)
+
+        # Collect prompt/completion token breakdown
+        post_stats = self.llm_client.get_stats()
+        token_details = {
+            "total_tokens": total_tokens,
+            "prompt_tokens": post_stats.get("prompt_tokens", 0) - pre_stats.get("prompt_tokens", 0),
+            "completion_tokens": post_stats.get("completion_tokens", 0) - pre_stats.get("completion_tokens", 0),
+            "total_calls": post_stats.get("total_calls", 0) - pre_stats.get("total_calls", 0),
+        }
 
         # Determine defence name
         if self.defense_strategy is not None:
@@ -161,4 +178,6 @@ class ExperimentRunner:
             trajectories=all_trajectories,
             metrics=metrics,
             timestamp=datetime.now().isoformat(),
+            cases=cases,
+            token_details=token_details,
         )

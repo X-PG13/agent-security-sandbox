@@ -251,3 +251,84 @@ class TestGetToolInfo:
         reg.config_path = None
         reg._register_default_tools()
         assert reg.get_tool_info("nonexistent") is None
+
+
+# ---------------------------------------------------------------------------
+# Tool state isolation between ToolRegistry instances
+# ---------------------------------------------------------------------------
+
+class TestToolIsolation:
+    """Verify that each ToolRegistry gets independent database instances."""
+
+    def test_email_db_isolation(self):
+        """Sending an email in registry A must not appear in registry B."""
+        reg_a = ToolRegistry.__new__(ToolRegistry)
+        reg_a.tools = {}
+        reg_a.config_path = None
+        reg_a._register_default_tools()
+
+        reg_b = ToolRegistry.__new__(ToolRegistry)
+        reg_b.tools = {}
+        reg_b.config_path = None
+        reg_b._register_default_tools()
+
+        # Send email in registry A
+        reg_a.execute_tool(
+            "send_email",
+            to="user@company.com",
+            subject="test",
+            body="hello",
+        )
+        # Registry B should have zero sent emails
+        send_b = reg_b.get_tool("send_email")
+        assert len(send_b._db.sent_emails) == 0
+
+    def test_file_system_isolation(self):
+        """Writing a file in registry A must not be readable in registry B."""
+        reg_a = ToolRegistry.__new__(ToolRegistry)
+        reg_a.tools = {}
+        reg_a.config_path = None
+        reg_a._register_default_tools()
+
+        reg_b = ToolRegistry.__new__(ToolRegistry)
+        reg_b.tools = {}
+        reg_b.config_path = None
+        reg_b._register_default_tools()
+
+        # Write file in registry A
+        reg_a.execute_tool(
+            "write_file",
+            file_path="/tmp/leak.txt",
+            content="secret",
+        )
+        # Registry B should not have the file
+        result = reg_b.execute_tool("read_file", file_path="/tmp/leak.txt")
+        assert result["status"] == "error"
+
+    def test_shared_email_db_within_registry(self):
+        """Email tools within the same registry share the same database."""
+        reg = ToolRegistry.__new__(ToolRegistry)
+        reg.tools = {}
+        reg.config_path = None
+        reg._register_default_tools()
+
+        read_tool = reg.get_tool("read_email")
+        send_tool = reg.get_tool("send_email")
+        list_tool = reg.get_tool("list_emails")
+
+        assert read_tool._db is send_tool._db
+        assert send_tool._db is list_tool._db
+
+    def test_shared_fs_within_registry(self):
+        """File tools within the same registry share the same filesystem."""
+        reg = ToolRegistry.__new__(ToolRegistry)
+        reg.tools = {}
+        reg.config_path = None
+        reg._register_default_tools()
+
+        read_tool = reg.get_tool("read_file")
+        write_tool = reg.get_tool("write_file")
+        create_tool = reg.get_tool("create_document")
+
+        assert read_tool._fs is write_tool._fs
+        assert write_tool._fs is create_tool._fs

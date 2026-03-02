@@ -97,14 +97,11 @@ class MockEmailDatabase:
         return list(self.emails.keys())
 
 
-# Global email database instance
-email_db = MockEmailDatabase()
-
-
 class ReadEmailTool(Tool):
     """Tool to read emails"""
 
-    def __init__(self):
+    def __init__(self, db: Optional[MockEmailDatabase] = None):
+        self._db = db or MockEmailDatabase()
         metadata = ToolMetadata(
             name="read_email",
             description="Read an email from the inbox by email ID",
@@ -134,7 +131,7 @@ class ReadEmailTool(Tool):
             }
 
         # Get email from database
-        email = email_db.get_email(email_id)
+        email = self._db.get_email(email_id)
 
         if email:
             return {
@@ -152,7 +149,8 @@ class ReadEmailTool(Tool):
 class SendEmailTool(Tool):
     """Tool to send emails"""
 
-    def __init__(self, whitelist: Optional[list] = None):
+    def __init__(self, whitelist: Optional[list] = None, db: Optional[MockEmailDatabase] = None):
+        self._db = db or MockEmailDatabase()
         # Default whitelist if not provided
         if whitelist is None:
             whitelist = ["user@company.com", "team@company.com", "admin@company.com"]
@@ -199,7 +197,7 @@ class SendEmailTool(Tool):
             }
 
         # Send email (mock)
-        success = email_db.send_email(to, subject, body)
+        success = self._db.send_email(to, subject, body)
 
         if success:
             return {
@@ -221,7 +219,8 @@ class SendEmailTool(Tool):
 class ListEmailsTool(Tool):
     """Tool to list all emails"""
 
-    def __init__(self):
+    def __init__(self, db: Optional[MockEmailDatabase] = None):
+        self._db = db or MockEmailDatabase()
         metadata = ToolMetadata(
             name="list_emails",
             description="List all emails in the inbox",
@@ -235,7 +234,7 @@ class ListEmailsTool(Tool):
 
     def execute(self) -> Dict[str, Any]:
         """List all emails"""
-        email_ids = email_db.list_emails()
+        email_ids = self._db.list_emails()
 
         return {
             "status": "success",

@@ -43,6 +43,7 @@ class BenchmarkCase(BaseModel):
     untrusted_content: Optional[str] = None
     injection_location: Optional[str] = None
     attack_type: Optional[str] = None
+    injection_technique: Optional[str] = None
     expected_tools: List[str] = Field(default_factory=list)
     forbidden_actions: List[Dict[str, Any]] = Field(default_factory=list)
     tags: List[str] = Field(default_factory=list)
@@ -146,6 +147,24 @@ class BenchmarkSuite:
         """Return a new suite with only cases at the given difficulty."""
         return BenchmarkSuite(
             [c for c in self._cases if c.difficulty == difficulty]
+        )
+
+    def filter_by_attack_type(self, attack_type: str) -> "BenchmarkSuite":
+        """Return a new suite containing only cases with the given *attack_type*."""
+        return BenchmarkSuite(
+            [c for c in self._cases if c.attack_type == attack_type]
+        )
+
+    def filter_by_injection_location(self, location: str) -> "BenchmarkSuite":
+        """Return a new suite filtered by *injection_location*."""
+        return BenchmarkSuite(
+            [c for c in self._cases if c.injection_location == location]
+        )
+
+    def filter_by_injection_technique(self, technique: str) -> "BenchmarkSuite":
+        """Return a new suite filtered by *injection_technique*."""
+        return BenchmarkSuite(
+            [c for c in self._cases if c.injection_technique == technique]
         )
 
     # ------------------------------------------------------------------

@@ -183,6 +183,129 @@ class Reporter:
         return output.getvalue()
 
     # ------------------------------------------------------------------
+    # Analysis Markdown
+    # ------------------------------------------------------------------
+
+    def generate_analysis_markdown(self, report: Any) -> str:
+        """Generate a Markdown report from a :class:`AnalysisReport`.
+
+        Includes sections for confidence intervals, category breakdowns,
+        pairwise comparisons, and cost-benefit analysis.
+
+        Args:
+            report: An :class:`AnalysisReport` from :class:`StatisticalAnalyzer`.
+
+        Returns:
+            A Markdown string with the full analysis.
+        """
+        lines: List[str] = []
+        lines.append("# Statistical Analysis Report")
+        lines.append("")
+
+        # -- Confidence Intervals ------------------------------------------
+        lines.append("## Confidence Intervals (95%)")
+        lines.append("")
+        lines.append("| Defense | Metric | Point | Lower | Upper | N |")
+        lines.append("|---------|--------|-------|-------|-------|---|")
+
+        for defense_name, cis in report.confidence_intervals.items():
+            for ci in cis:
+                lines.append(
+                    f"| {defense_name} "
+                    f"| {ci.metric_name} "
+                    f"| {ci.point:.3f} "
+                    f"| {ci.lower:.3f} "
+                    f"| {ci.upper:.3f} "
+                    f"| {ci.n} |"
+                )
+        lines.append("")
+
+        # -- Category Breakdowns -------------------------------------------
+        lines.append("## Category Breakdowns")
+        lines.append("")
+
+        for defense_name, breakdowns in report.category_breakdowns.items():
+            if not breakdowns:
+                continue
+            lines.append(f"### {defense_name}")
+            lines.append("")
+
+            for bd in breakdowns:
+                lines.append(f"#### By {bd.dimension}")
+                lines.append("")
+                lines.append(
+                    "| Value | Total | Successes | Rate | CI Lower | CI Upper |"
+                )
+                lines.append(
+                    "|-------|-------|-----------|------|----------|----------|"
+                )
+                for s in bd.slices:
+                    lines.append(
+                        f"| {s.category_value} "
+                        f"| {s.total} "
+                        f"| {s.successes} "
+                        f"| {s.rate:.3f} "
+                        f"| {s.ci.lower:.3f} "
+                        f"| {s.ci.upper:.3f} |"
+                    )
+                lines.append("")
+
+        # -- Pairwise Comparisons ------------------------------------------
+        if report.comparisons:
+            lines.append("## Pairwise Comparisons (McNemar's Test)")
+            lines.append("")
+            lines.append(
+                "| Defense A | Defense B | Metric | N | A-only | B-only "
+                "| Chi2 | p-value | Significant |"
+            )
+            lines.append(
+                "|-----------|-----------|--------|---|--------|--------"
+                "|------|---------|-------------|"
+            )
+
+            for c in report.comparisons:
+                sig = "Yes" if c.significant else "No"
+                lines.append(
+                    f"| {c.defense_a} "
+                    f"| {c.defense_b} "
+                    f"| {c.metric} "
+                    f"| {c.n_cases} "
+                    f"| {c.a_only} "
+                    f"| {c.b_only} "
+                    f"| {c.chi2:.3f} "
+                    f"| {c.p_value:.4f} "
+                    f"| {sig} |"
+                )
+            lines.append("")
+
+        # -- Cost-Benefit Analysis -----------------------------------------
+        if report.cost_benefits:
+            lines.append("## Cost-Benefit Analysis")
+            lines.append("")
+            lines.append(
+                "| Defense | ASR | BSR | FPR | Avg Tokens | "
+                "Security Score | Utility Score |"
+            )
+            lines.append(
+                "|---------|-----|-----|-----|------------|"
+                "----------------|---------------|"
+            )
+
+            for cb in report.cost_benefits:
+                lines.append(
+                    f"| {cb.defense_name} "
+                    f"| {cb.asr:.3f} "
+                    f"| {cb.bsr:.3f} "
+                    f"| {cb.fpr:.3f} "
+                    f"| {cb.avg_tokens_per_case:.0f} "
+                    f"| {cb.security_score:.3f} "
+                    f"| {cb.utility_score:.3f} |"
+                )
+            lines.append("")
+
+        return "\n".join(lines)
+
+    # ------------------------------------------------------------------
     # Save helper
     # ------------------------------------------------------------------
 

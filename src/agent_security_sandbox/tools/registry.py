@@ -6,9 +6,11 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from .base import Tool
-from .email import ListEmailsTool, ReadEmailTool, SendEmailTool
-from .file import CreateDocumentTool, ReadFileTool, WriteFileTool
-from .search import SearchWebTool
+from .api_client import CallAPITool, MockAPIDatabase, PostAPITool
+from .calendar import CreateCalendarEventTool, MockCalendarDatabase, ReadCalendarTool
+from .email import ListEmailsTool, MockEmailDatabase, ReadEmailTool, SendEmailTool
+from .file import CreateDocumentTool, MockFileSystem, ReadFileTool, WriteFileTool
+from .search import MockSearchDatabase, SearchWebTool
 
 try:
     import yaml
@@ -40,19 +42,34 @@ class ToolRegistry:
             self._load_from_config(self.config_path)
 
     def _register_default_tools(self):
-        """Register default built-in tools"""
-        # Email tools
-        self.register(ReadEmailTool())
-        self.register(SendEmailTool())
-        self.register(ListEmailsTool())
+        """Register default built-in tools with shared per-registry databases."""
+        # Create per-registry database instances for isolation
+        email_db = MockEmailDatabase()
+        file_system = MockFileSystem()
+        search_db = MockSearchDatabase()
+        calendar_db = MockCalendarDatabase()
+        api_db = MockAPIDatabase()
+
+        # Email tools (shared email_db)
+        self.register(ReadEmailTool(db=email_db))
+        self.register(SendEmailTool(db=email_db))
+        self.register(ListEmailsTool(db=email_db))
 
         # Search tools
-        self.register(SearchWebTool())
+        self.register(SearchWebTool(db=search_db))
 
-        # File tools
-        self.register(ReadFileTool())
-        self.register(WriteFileTool())
-        self.register(CreateDocumentTool())
+        # File tools (shared file_system)
+        self.register(ReadFileTool(fs=file_system))
+        self.register(WriteFileTool(fs=file_system))
+        self.register(CreateDocumentTool(fs=file_system))
+
+        # Calendar tools
+        self.register(ReadCalendarTool(db=calendar_db))
+        self.register(CreateCalendarEventTool(db=calendar_db))
+
+        # API tools
+        self.register(CallAPITool(db=api_db))
+        self.register(PostAPITool(db=api_db))
 
     def _load_from_config(self, config_path: str):
         """Load tool configurations from YAML file"""
