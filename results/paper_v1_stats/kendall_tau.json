@@ -1,0 +1,28 @@
+{
+  "rankings": {
+    "claude-sonnet-4-5-20250929": [
+      "D0"
+    ],
+    "deepseek-v3-1-250821": [
+      "D5",
+      "D1",
+      "D4",
+      "D2",
+      "D3",
+      "D0"
+    ],
+    "gpt-4o": [
+      "D1",
+      "D5",
+      "D4",
+      "D2",
+      "D3",
+      "D0"
+    ]
+  },
+  "tau": {
+    "claude-sonnet-4-5-20250929_vs_deepseek-v3-1-250821": 1.0,
+    "claude-sonnet-4-5-20250929_vs_gpt-4o": 1.0,
+    "deepseek-v3-1-250821_vs_gpt-4o": 0.8667
+  }
+}
