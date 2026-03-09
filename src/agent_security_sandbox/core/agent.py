@@ -260,6 +260,10 @@ Important:
         Returns:
             ``(observation, defense_decision)`` tuple.
         """
+        # Remove 'tool_name' from action_input if present — it conflicts
+        # with the positional arg of execute_tool().
+        safe_input = {k: v for k, v in action_input.items() if k != "tool_name"}
+
         defense_decision = None
         if defense_strategy and hasattr(defense_strategy, 'should_allow_tool_call'):
             tool = self.tools.get_tool(action)
@@ -275,7 +279,7 @@ Important:
                         print(f"Defense Decision: BLOCKED - {reason}")
                     return observation, defense_decision
                 else:
-                    result = self.tools.execute_tool(action, **action_input)
+                    result = self.tools.execute_tool(action, **safe_input)
                     observation = json.dumps(result)
                     if self.verbose:
                         print(f"Observation: {observation[:200]}...")
@@ -283,7 +287,7 @@ Important:
             else:
                 return f"Error: Unknown tool '{action}'", defense_decision
         else:
-            result = self.tools.execute_tool(action, **action_input)
+            result = self.tools.execute_tool(action, **safe_input)
             observation = json.dumps(result)
             if self.verbose:
                 print(f"Observation: {observation[:200]}...")
