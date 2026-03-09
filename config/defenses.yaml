@@ -81,6 +81,32 @@ defenses:
       delimiter_start: "<<UNTRUSTED CONTENT START>>"
       delimiter_end: "<<UNTRUSTED CONTENT END>>"
 
+  D6:
+    name: "Output Filter"
+    description: "Content-based heuristic scanning of outgoing tool parameters"
+    enabled: true
+    config:
+      check_injection_phrases: true
+      check_exfiltration: true
+      check_secrets: true
+      allowed_domains:
+        - company.com
+      monitored_tools:
+        - send_email
+        - write_file
+        - create_document
+        - post_api
+        - call_api
+
+  D7:
+    name: "Input Classifier"
+    description: "Pre-processing injection detection and content sanitization"
+    enabled: true
+    config:
+      threshold: 3.0
+      action: "replace"
+      flag_tool_observations: false
+
 # Default defense for experiments
 default_defense: "D0"
 
@@ -93,3 +119,19 @@ combinations:
   D1_D2_D3:
     defenses: ["D1", "D2", "D3"]
     description: "Source marking + Policy gate + Task alignment"
+
+  D6_D7:
+    defenses: ["D6", "D7"]
+    description: "Output filter + Input classifier (content-level)"
+
+  D1_D6_D7:
+    defenses: ["D1", "D6", "D7"]
+    description: "Spotlighting + Output filter + Input classifier"
+
+  D2_D6:
+    defenses: ["D2", "D6"]
+    description: "Policy gate + Output filter (tool-level)"
+
+  D5_D7:
+    defenses: ["D5", "D7"]
+    description: "Sandwich + Input classifier (prompt+content)"

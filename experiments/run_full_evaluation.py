@@ -4,7 +4,7 @@ Full-scale evaluation across multiple models, defenses, and runs.
 
 Supports:
   - Multiple models (--models gpt-4o claude-3-5-sonnet llama-3.1-70b)
-  - All defense strategies D0-D5 (--defenses D0 D1 D2 D3 D4 D5)
+  - All defense strategies D0-D7 (--defenses D0 D1 D2 D3 D4 D5)
   - Multiple runs for statistical significance (--runs 3)
   - Resume from checkpoint (--resume)
   - Custom benchmark directory (--benchmark-dir)
@@ -44,7 +44,7 @@ from agent_security_sandbox.defenses.registry import create_defense
 from agent_security_sandbox.evaluation.benchmark import BenchmarkSuite
 from agent_security_sandbox.evaluation.runner import ExperimentRunner
 
-ALL_DEFENSES = ["D0", "D1", "D2", "D3", "D4", "D5"]
+ALL_DEFENSES = ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7"]
 
 # Model name -> provider mapping
 MODEL_PROVIDERS = {
@@ -115,6 +115,10 @@ def parse_args() -> argparse.Namespace:
         "--resume", action="store_true",
         help="Skip (model, defense, run) combos that already have result files.",
     )
+    parser.add_argument(
+        "--no-function-calling", action="store_true",
+        help="Use text ReAct mode instead of function calling.",
+    )
     return parser.parse_args()
 
 
@@ -169,6 +173,7 @@ def _run_single(
         tool_registry_factory=ToolRegistry,
         defense_strategy=defense,
         max_steps=args.max_steps,
+        use_function_calling=not args.no_function_calling,
     )
 
     start_time = time.time()

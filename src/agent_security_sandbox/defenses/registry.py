@@ -25,6 +25,8 @@ from .d2_policy_gate import PolicyGateDefense
 from .d3_task_alignment import TaskAlignmentDefense
 from .d4_reexecution import ReExecutionDefense
 from .d5_sandwich import SandwichDefense
+from .d6_output_filter import OutputFilterDefense
+from .d7_input_classifier import InputClassifierDefense
 
 # Map defense IDs to their implementation classes.
 _DEFENSE_CLASSES: Dict[str, type] = {
@@ -34,6 +36,8 @@ _DEFENSE_CLASSES: Dict[str, type] = {
     "D3": TaskAlignmentDefense,
     "D4": ReExecutionDefense,
     "D5": SandwichDefense,
+    "D6": OutputFilterDefense,
+    "D7": InputClassifierDefense,
 }
 
 
@@ -45,7 +49,7 @@ def create_defense(
     """Create a single defense strategy by its ID.
 
     Args:
-        defense_id: One of ``"D0"``--``"D5"``, or variant IDs like
+        defense_id: One of ``"D0"``--``"D7"``, or variant IDs like
             ``"D1_datamarking"``, ``"D1_encoding"``.
         config: Optional configuration dictionary for the defense.
         llm_client: Optional ``LLMClient`` instance (used by D3 and D4).

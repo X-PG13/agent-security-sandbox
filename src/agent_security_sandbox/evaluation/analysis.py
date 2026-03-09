@@ -14,12 +14,11 @@ from __future__ import annotations
 import math
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 from ..evaluation.benchmark import BenchmarkCase
 from ..evaluation.judge import JudgeResult, JudgeVerdict
 from ..evaluation.runner import ExperimentResult
-
 
 # ── Wilson Score Confidence Interval ─────────────────────────────────────────
 
@@ -214,6 +213,27 @@ class CostBenefit:
 # ── Analysis Report ──────────────────────────────────────────────────────────
 
 @dataclass
+class DifficultyCell:
+    """ASR at a single difficulty level for one defence."""
+    difficulty: str
+    n_attack: int
+    n_succeeded: int
+    asr: float
+    ci: ConfidenceInterval
+
+
+@dataclass
+class DifficultyAnalysis:
+    """Cross-tabulation of ASR by difficulty × defence.
+
+    ``rows`` is keyed by defence name; each value is a list of
+    :class:`DifficultyCell` sorted by difficulty level.
+    """
+    difficulty_levels: List[str]
+    rows: Dict[str, List[DifficultyCell]] = field(default_factory=dict)
+
+
+@dataclass
 class AnalysisReport:
     """Structured container for all analysis outputs.
 
@@ -222,6 +242,7 @@ class AnalysisReport:
         category_breakdowns: Per-defence breakdowns by category.
         comparisons: Pairwise defence comparisons.
         cost_benefits: Per-defence cost-benefit summaries.
+        difficulty_analysis: ASR by difficulty × defence cross-table.
     """
     confidence_intervals: Dict[str, List[ConfidenceInterval]] = field(
         default_factory=dict
@@ -231,6 +252,7 @@ class AnalysisReport:
     )
     comparisons: List[ComparisonResult] = field(default_factory=list)
     cost_benefits: List[CostBenefit] = field(default_factory=list)
+    difficulty_analysis: DifficultyAnalysis | None = None
 
 
 # ── StatisticalAnalyzer ──────────────────────────────────────────────────────
@@ -276,7 +298,14 @@ class StatisticalAnalyzer:
 
         # Pairwise comparisons
         if len(experiment_results) >= 2:
-            report.comparisons = self._compute_comparisons(experiment_results)
+            report.comparisons = self._compute_comparisons(
+                experiment_results
+            )
+
+        # Difficulty × defence cross-analysis
+        report.difficulty_analysis = self._compute_difficulty_analysis(
+            experiment_results, confidence
+        )
 
         return report
 
@@ -337,7 +366,8 @@ class StatisticalAnalyzer:
     def _compute_breakdowns(
         er: ExperimentResult, confidence: float,
     ) -> List[CategoryBreakdown]:
-        """Compute breakdowns by attack_type, injection_location, injection_technique, difficulty."""
+        """Compute breakdowns by attack_type, injection_location,
+        injection_technique, difficulty."""
         breakdowns: List[CategoryBreakdown] = []
 
         if not er.cases:
@@ -472,3 +502,73 @@ class StatisticalAnalyzer:
             security_score=security_score,
             utility_score=utility_score,
         )
+
+    # ── Internal: Difficulty × Defence Cross-Analysis ──────────────────
+
+    @staticmethod
+    def _compute_difficulty_analysis(
+        results: List[ExperimentResult],
+        confidence: float,
+    ) -> DifficultyAnalysis:
+        """Compute ASR broken down by difficulty for each defence.
+
+        Returns a :class:`DifficultyAnalysis` with one row per defence
+        and one column per difficulty level.
+        """
+        # Collect all difficulty levels across all experiments
+        all_difficulties: set[str] = set()
+        for er in results:
+            if not er.cases:
+                continue
+            for case in er.cases:
+                diff = getattr(case, "difficulty", None)
+                if diff is not None:
+                    all_difficulties.add(str(diff))
+
+        difficulty_levels = sorted(all_difficulties)
+        analysis = DifficultyAnalysis(difficulty_levels=difficulty_levels)
+
+        for er in results:
+            if not er.cases:
+                continue
+
+            name = er.defense_name
+            # Group attack cases by difficulty
+            diff_groups: Dict[str, List[Tuple[BenchmarkCase, JudgeResult]]] = (
+                defaultdict(list)
+            )
+            for case, result in zip(er.cases, er.results):
+                if result.verdict not in (
+                    JudgeVerdict.ATTACK_SUCCEEDED,
+                    JudgeVerdict.ATTACK_BLOCKED,
+                ):
+                    continue
+                diff = str(getattr(case, "difficulty", "unknown"))
+                diff_groups[diff].append((case, result))
+
+            cells: List[DifficultyCell] = []
+            for level in difficulty_levels:
+                items = diff_groups.get(level, [])
+                n_attack = len(items)
+                n_succeeded = sum(
+                    1 for _, r in items
+                    if r.verdict == JudgeVerdict.ATTACK_SUCCEEDED
+                )
+                asr, lower, upper = wilson_score_interval(
+                    n_succeeded, n_attack, confidence
+                )
+                ci = ConfidenceInterval(
+                    metric_name=f"ASR_{level}",
+                    point=asr, lower=lower, upper=upper,
+                    n=n_attack, confidence=confidence,
+                )
+                cells.append(DifficultyCell(
+                    difficulty=level,
+                    n_attack=n_attack,
+                    n_succeeded=n_succeeded,
+                    asr=asr,
+                    ci=ci,
+                ))
+            analysis.rows[name] = cells
+
+        return analysis

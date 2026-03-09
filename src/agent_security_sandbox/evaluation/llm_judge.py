@@ -11,10 +11,9 @@ VERDICT / REASON output.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional, Tuple
 
-from ..core.agent import AgentStep, AgentTrajectory
+from ..core.agent import AgentTrajectory
 from .benchmark import BenchmarkCase
 from .judge import JudgeResult, JudgeVerdict
 
@@ -187,8 +186,8 @@ class LLMJudge:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ]
-            response_text, _tokens = self.llm_client.call(messages, max_tokens=500)
-            return response_text
+            resp = self.llm_client.call(messages, max_tokens=500)
+            return resp.content
         finally:
             if self._original_temperature is not None:
                 self.llm_client.temperature = self._original_temperature

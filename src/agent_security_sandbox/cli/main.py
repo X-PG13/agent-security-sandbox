@@ -262,7 +262,7 @@ def cli():
 @click.argument("goal")
 @click.option(
     "--defense", "-d", default=lambda: os.getenv("DEFAULT_DEFENSE", "D0"),
-    help="Defense strategy ID (D0-D4). [env: DEFAULT_DEFENSE]",
+    help="Defense strategy ID (D0-D7). [env: DEFAULT_DEFENSE]",
 )
 @click.option(
     "--provider", default=lambda: os.getenv("LLM_PROVIDER", "mock"),
@@ -283,10 +283,15 @@ def cli():
     help="Maximum number of agent reasoning steps. [env: MAX_AGENT_STEPS]",
 )
 @click.option(
+    "--function-calling/--no-function-calling", "function_calling",
+    default=True, show_default=True,
+    help="Use OpenAI function calling (default) or text ReAct mode.",
+)
+@click.option(
     "--verbose/--quiet", default=True, show_default=True,
     help="Enable or suppress step-by-step output.",
 )
-def run(goal, defense, provider, model, base_url, max_steps, verbose):
+def run(goal, defense, provider, model, base_url, max_steps, function_calling, verbose):
     """Run the agent on a single task.
 
     GOAL is the natural-language instruction for the agent.
@@ -324,12 +329,14 @@ def run(goal, defense, provider, model, base_url, max_steps, verbose):
         tool_registry=tool_registry,
         max_steps=max_steps,
         verbose=verbose,
+        use_function_calling=function_calling,
     )
 
     if verbose:
         click.echo(f"Provider : {provider}")
         click.echo(f"Model    : {model or '(default)'}")
         click.echo(f"Defense  : {defense}")
+        click.echo(f"FC mode  : {function_calling}")
         click.echo(f"Max steps: {max_steps}")
         click.echo()
 
@@ -405,6 +412,11 @@ def run(goal, defense, provider, model, base_url, max_steps, verbose):
     help="Judge mode: 'rule' (AutoJudge), 'llm' (LLMJudge), or 'both' (CompositeJudge).",
 )
 @click.option(
+    "--function-calling/--no-function-calling", "function_calling",
+    default=True, show_default=True,
+    help="Use OpenAI function calling (default) or text ReAct mode.",
+)
+@click.option(
     "--analyze/--no-analyze", default=False, show_default=True,
     help="Run statistical analysis (CIs, breakdowns, McNemar's test).",
 )
@@ -412,7 +424,10 @@ def run(goal, defense, provider, model, base_url, max_steps, verbose):
     "--verbose/--quiet", default=False, show_default=True,
     help="Enable step-by-step output for every case.",
 )
-def evaluate(benchmark, suite, defense, provider, model, base_url, output, max_steps, judge_mode, analyze, verbose):
+def evaluate(
+    benchmark, suite, defense, provider, model, base_url,
+    output, max_steps, judge_mode, function_calling, analyze, verbose,
+):
     """Run benchmark evaluation with specified defenses.
 
     Loads all .jsonl benchmark cases from the BENCHMARK directory and
@@ -472,7 +487,8 @@ def evaluate(benchmark, suite, defense, provider, model, base_url, output, max_s
         return tool_registry_cls(config_path=tools_config_path)
 
     # -- Build judge -----------------------------------------------------------
-    judge = None  # default: AutoJudge (rule-based)
+    from agent_security_sandbox.evaluation.judge import Judge
+    judge: Optional[Judge] = None  # default: AutoJudge (rule-based)
     if judge_mode in ("llm", "both"):
         if provider == "mock":
             click.echo(
@@ -526,6 +542,7 @@ def evaluate(benchmark, suite, defense, provider, model, base_url, output, max_s
                 max_steps=max_steps,
                 verbose=verbose,
                 judge=judge,
+                use_function_calling=function_calling,
             )
             results = runner.run_suite(suite)
             all_results.append({
@@ -640,9 +657,9 @@ def report(results_dir, fmt, output):
         raise click.ClickException("No valid result files could be loaded.")
 
     # -- Reconstruct ExperimentResult-like objects from loaded JSON ----------
-    from agent_security_sandbox.evaluation.runner import ExperimentResult
-    from agent_security_sandbox.evaluation.metrics import EvaluationMetrics
     from agent_security_sandbox.evaluation.judge import JudgeResult, JudgeVerdict
+    from agent_security_sandbox.evaluation.metrics import EvaluationMetrics
+    from agent_security_sandbox.evaluation.runner import ExperimentResult
 
     def _reconstruct(data: dict) -> ExperimentResult:
         """Best-effort reconstruction of ExperimentResult from a dict."""

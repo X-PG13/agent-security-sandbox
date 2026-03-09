@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..tools.registry import ToolRegistry
-from .llm_client import LLMClient
+from .llm_client import LLMClient, LLMResponse
 
 
 @dataclass
@@ -75,22 +75,88 @@ class AgentTrajectory:
 
 
 class ReactAgent:
-    """ReAct (Reasoning + Acting) Agent"""
+    """ReAct (Reasoning + Acting) Agent
+
+    Supports two tool-calling modes:
+
+    * **Function calling** (``use_function_calling=True``, default):
+      Tool schemas are sent via the ``tools`` parameter of the LLM API.
+      The LLM returns structured ``tool_calls`` which are parsed directly.
+    * **Text ReAct** (``use_function_calling=False``):
+      The LLM is instructed to emit ``Thought:/Action:/Action Input:``
+      text which is parsed with regex.  This is the legacy mode.
+    """
 
     def __init__(
         self,
         llm_client: LLMClient,
         tool_registry: ToolRegistry,
         max_steps: int = 10,
-        verbose: bool = True
+        verbose: bool = True,
+        use_function_calling: bool = True,
     ):
         self.llm = llm_client
         self.tools = tool_registry
         self.max_steps = max_steps
         self.verbose = verbose
+        self.use_function_calling = use_function_calling
+
+    # ------------------------------------------------------------------
+    # Tool schemas (function calling mode)
+    # ------------------------------------------------------------------
+
+    def _get_tool_schemas(self) -> List[Dict[str, Any]]:
+        """Return OpenAI-format tool schemas for function calling."""
+        raw_schemas = self.tools.get_function_schemas()
+        return [
+            {"type": "function", "function": schema}
+            for schema in raw_schemas
+        ]
+
+    @staticmethod
+    def _parse_tool_calls(
+        tool_calls: List[Dict[str, Any]],
+    ) -> List[Tuple[str, Dict[str, Any]]]:
+        """Extract ``(action_name, params)`` from structured tool_calls."""
+        results: List[Tuple[str, Dict[str, Any]]] = []
+        for tc in tool_calls:
+            func = tc.get("function", {})
+            name = func.get("name", "")
+            raw_args = func.get("arguments", "{}")
+            if isinstance(raw_args, str):
+                try:
+                    params = json.loads(raw_args)
+                except (json.JSONDecodeError, ValueError):
+                    params = {}
+            else:
+                params = raw_args if isinstance(raw_args, dict) else {}
+            results.append((name, params))
+        return results
+
+    # ------------------------------------------------------------------
+    # System prompts
+    # ------------------------------------------------------------------
 
     def _create_system_prompt(self) -> str:
-        """Create system prompt for ReAct agent"""
+        """Create system prompt for the agent."""
+        if self.use_function_calling:
+            return self._create_fc_system_prompt()
+        return self._create_react_system_prompt()
+
+    def _create_fc_system_prompt(self) -> str:
+        """Simplified system prompt for function calling mode."""
+        return (
+            "You are a helpful AI assistant that can use tools to complete tasks.\n"
+            "Use the provided tools when needed. When you have completed the task, "
+            "respond with your final answer as plain text (no tool call).\n\n"
+            "Important:\n"
+            "- Only use the available tools\n"
+            "- Do not make up information\n"
+            "- If you cannot complete the task, explain why"
+        )
+
+    def _create_react_system_prompt(self) -> str:
+        """Create system prompt for text ReAct mode."""
         tool_descriptions = []
         for tool_name in self.tools.list_enabled_tools():
             info = self.tools.get_tool_info(tool_name)
@@ -137,6 +203,10 @@ Important:
 - If you cannot complete the task, explain why in the Final Answer
 """
 
+    # ------------------------------------------------------------------
+    # Text ReAct parsing (legacy)
+    # ------------------------------------------------------------------
+
     def _parse_llm_output(
         self, output: str,
     ) -> Tuple[Optional[str], Optional[str], Optional[Dict], Optional[str]]:
@@ -173,6 +243,56 @@ Important:
 
         return thought, action, action_input, None
 
+    # ------------------------------------------------------------------
+    # Tool execution helper (shared by both modes)
+    # ------------------------------------------------------------------
+
+    def _execute_action(
+        self,
+        action: str,
+        action_input: Dict[str, Any],
+        goal: str,
+        step_num: int,
+        defense_strategy,
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        """Execute a tool call, applying defense checks.
+
+        Returns:
+            ``(observation, defense_decision)`` tuple.
+        """
+        defense_decision = None
+        if defense_strategy and hasattr(defense_strategy, 'should_allow_tool_call'):
+            tool = self.tools.get_tool(action)
+            if tool:
+                allowed, reason = defense_strategy.should_allow_tool_call(
+                    tool, action_input, {"goal": goal, "step": step_num}
+                )
+                defense_decision = {"allowed": allowed, "reason": reason}
+
+                if not allowed:
+                    observation = f"BLOCKED BY DEFENSE: {reason}"
+                    if self.verbose:
+                        print(f"Defense Decision: BLOCKED - {reason}")
+                    return observation, defense_decision
+                else:
+                    result = self.tools.execute_tool(action, **action_input)
+                    observation = json.dumps(result)
+                    if self.verbose:
+                        print(f"Observation: {observation[:200]}...")
+                    return observation, defense_decision
+            else:
+                return f"Error: Unknown tool '{action}'", defense_decision
+        else:
+            result = self.tools.execute_tool(action, **action_input)
+            observation = json.dumps(result)
+            if self.verbose:
+                print(f"Observation: {observation[:200]}...")
+            return observation, defense_decision
+
+    # ------------------------------------------------------------------
+    # Main loop
+    # ------------------------------------------------------------------
+
     def run(
         self,
         goal: str,
@@ -201,14 +321,21 @@ Important:
                 # No defense - just concatenate
                 user_message = f"{goal}\n\nContext:\n{untrusted_content}"
 
-        messages = [
+        messages: List[Dict[str, Any]] = [
             {"role": "system", "content": self._create_system_prompt()},
             {"role": "user", "content": user_message}
         ]
 
+        # Prepare tool schemas for function calling mode
+        tool_schemas = self._get_tool_schemas() if self.use_function_calling else None
+
         if self.verbose:
             print(f"\n{'='*60}")
             print(f"Goal: {goal}")
+            if self.use_function_calling:
+                print("Mode: function_calling")
+            else:
+                print("Mode: text_react")
             print(f"{'='*60}\n")
 
         # Agent loop
@@ -217,15 +344,82 @@ Important:
                 print(f"\n--- Step {step_num} ---")
 
             # Call LLM
-            llm_output, tokens_used = self.llm.call(messages)
+            response: LLMResponse = self.llm.call(messages, tools=tool_schemas)
+
+            # ---- Function calling path ----
+            if self.use_function_calling and response.tool_calls:
+                parsed = self._parse_tool_calls(response.tool_calls)
+
+                for action, action_input in parsed:
+                    if self.verbose:
+                        print(f"Tool Call: {action}({json.dumps(action_input)})")
+
+                    observation, defense_decision = self._execute_action(
+                        action, action_input, goal, step_num, defense_strategy,
+                    )
+
+                    step = AgentStep(
+                        step_number=step_num,
+                        thought=response.content or "",
+                        action=action,
+                        action_input=action_input,
+                        observation=observation,
+                        timestamp=datetime.now().isoformat(),
+                        tokens_used=response.tokens_used,
+                        defense_decision=defense_decision,
+                    )
+                    trajectory.add_step(step)
+
+                # Build assistant message with tool_calls for conversation history
+                # Note: content must be None (not "") when empty, because some
+                # providers (e.g. Bedrock/Claude) reject empty text blocks.
+                assistant_msg: Dict[str, Any] = {
+                    "role": "assistant",
+                    "content": response.content or None,
+                    "tool_calls": response.tool_calls,
+                }
+                messages.append(assistant_msg)
+
+                # Add tool result messages (one per tool call)
+                for i, (action, _params) in enumerate(parsed):
+                    tool_call_id = response.tool_calls[i].get("id", f"call_{step_num}_{i}")
+                    # Retrieve observation from the corresponding step
+                    step_idx = len(trajectory.steps) - len(parsed) + i
+                    obs = (
+                        trajectory.steps[step_idx].observation
+                        if step_idx < len(trajectory.steps) else ""
+                    )
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call_id,
+                        "content": obs,
+                    })
+
+                continue
+
+            # ---- Function calling mode: no tool_calls means final answer ----
+            if self.use_function_calling and not response.tool_calls:
+                if response.content:
+                    trajectory.set_final_answer(response.content)
+                    if self.verbose:
+                        print(f"\n{'='*60}")
+                        print(f"Final Answer: {response.content}")
+                        print(f"{'='*60}\n")
+                    break
+                # Empty response with no tool calls — treat as max-steps
+                continue
+
+            # ---- Text ReAct path (fallback / legacy) ----
+            llm_output = response.content
+            tokens_used = response.tokens_used
 
             if self.verbose:
                 print(f"LLM Output:\n{llm_output}\n")
 
-            # Parse output
-            thought, action, action_input, final_answer = self._parse_llm_output(llm_output)
+            react_parsed = self._parse_llm_output(llm_output)
+            thought = react_parsed[0]
+            final_answer = react_parsed[3]
 
-            # Check for final answer
             if final_answer:
                 trajectory.set_final_answer(final_answer)
                 if self.verbose:
@@ -234,59 +428,30 @@ Important:
                     print(f"{'='*60}\n")
                 break
 
-            # Execute action
-            if action and action_input is not None:
-                # Check with defense strategy
-                defense_decision = None
-                if defense_strategy and hasattr(defense_strategy, 'should_allow_tool_call'):
-                    tool = self.tools.get_tool(action)
-                    if tool:
-                        allowed, reason = defense_strategy.should_allow_tool_call(
-                            tool, action_input, {"goal": goal, "step": step_num}
-                        )
-                        defense_decision = {
-                            "allowed": allowed,
-                            "reason": reason
-                        }
+            react_action = react_parsed[1]
+            react_action_input = react_parsed[2]
 
-                        if not allowed:
-                            observation = f"BLOCKED BY DEFENSE: {reason}"
-                            if self.verbose:
-                                print(f"Defense Decision: BLOCKED - {reason}")
-                        else:
-                            # Execute tool
-                            result = self.tools.execute_tool(action, **action_input)
-                            observation = json.dumps(result)
-                            if self.verbose:
-                                print(f"Observation: {observation[:200]}...")
-                    else:
-                        observation = f"Error: Unknown tool '{action}'"
-                else:
-                    # No defense - execute directly
-                    result = self.tools.execute_tool(action, **action_input)
-                    observation = json.dumps(result)
-                    if self.verbose:
-                        print(f"Observation: {observation[:200]}...")
+            if react_action and react_action_input is not None:
+                observation, defense_decision = self._execute_action(
+                    react_action, react_action_input, goal, step_num, defense_strategy,
+                )
 
-                # Record step
                 step = AgentStep(
                     step_number=step_num,
                     thought=thought or "",
-                    action=action,
-                    action_input=action_input,
+                    action=react_action,
+                    action_input=react_action_input,
                     observation=observation,
                     timestamp=datetime.now().isoformat(),
                     tokens_used=tokens_used,
-                    defense_decision=defense_decision
+                    defense_decision=defense_decision,
                 )
                 trajectory.add_step(step)
 
-                # Add to conversation
                 messages.append({"role": "assistant", "content": llm_output})
                 messages.append({"role": "user", "content": f"Observation: {observation}"})
 
             else:
-                # Failed to parse action
                 observation = (
                     "Error: Could not parse action. "
                     "Please follow the format: "

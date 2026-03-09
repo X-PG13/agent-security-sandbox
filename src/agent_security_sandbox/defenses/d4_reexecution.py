@@ -124,10 +124,23 @@ class ReExecutionDefense(DefenseStrategy):
         ]
 
         try:
-            response_text, _tokens = self.llm_client.call(
-                messages, max_tokens=300
-            )
-            clean_action, clean_params = self._parse_action(response_text)
+            resp = self.llm_client.call(messages, max_tokens=300)
+            # If the LLM returned structured tool_calls, extract directly
+            if resp.tool_calls:
+                tc = resp.tool_calls[0]
+                func = tc.get("function", {})
+                clean_action = func.get("name")
+                raw_args = func.get("arguments", "{}")
+                if isinstance(raw_args, str):
+                    import json as _json
+                    try:
+                        clean_params = _json.loads(raw_args)
+                    except (ValueError, _json.JSONDecodeError):
+                        clean_params = {}
+                else:
+                    clean_params = raw_args if isinstance(raw_args, dict) else {}
+            else:
+                clean_action, clean_params = self._parse_action(resp.content)
         except Exception:
             # If re-execution fails, fall back to heuristic
             return self._heuristic_check(goal, tool, params)

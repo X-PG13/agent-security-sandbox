@@ -53,7 +53,9 @@ class MockCalendarDatabase:
                 results.append({**event, "id": eid})
         return results
 
-    def create_event(self, title: str, date: str, time: str, description: str = "") -> Dict[str, Any]:
+    def create_event(
+        self, title: str, date: str, time: str, description: str = "",
+    ) -> Dict[str, Any]:
         """Create a new calendar event"""
         event = {
             "title": title,

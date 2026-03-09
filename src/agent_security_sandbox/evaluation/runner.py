@@ -15,7 +15,7 @@ from ..core.llm_client import LLMClient
 from ..defenses.base import DefenseStrategy
 from ..tools.registry import ToolRegistry
 from .benchmark import BenchmarkCase, BenchmarkSuite
-from .judge import AutoJudge, JudgeResult
+from .judge import AutoJudge, Judge, JudgeResult
 from .metrics import EvaluationMetrics, MetricsCalculator
 
 
@@ -65,13 +65,15 @@ class ExperimentRunner:
         defense_strategy: Optional[DefenseStrategy] = None,
         max_steps: int = 10,
         verbose: bool = False,
-        judge: Optional[object] = None,
+        judge: Optional[Judge] = None,
+        use_function_calling: bool = True,
     ) -> None:
         self.llm_client = llm_client
         self.tool_registry_factory = tool_registry_factory
         self.defense_strategy = defense_strategy
         self.max_steps = max_steps
         self.verbose = verbose
+        self.use_function_calling = use_function_calling
         self._judge = judge if judge is not None else AutoJudge()
         self._metrics_calc = MetricsCalculator()
 
@@ -106,6 +108,7 @@ class ExperimentRunner:
             tool_registry=tool_registry,
             max_steps=self.max_steps,
             verbose=self.verbose,
+            use_function_calling=self.use_function_calling,
         )
 
         # Execute
@@ -162,7 +165,10 @@ class ExperimentRunner:
         token_details = {
             "total_tokens": total_tokens,
             "prompt_tokens": post_stats.get("prompt_tokens", 0) - pre_stats.get("prompt_tokens", 0),
-            "completion_tokens": post_stats.get("completion_tokens", 0) - pre_stats.get("completion_tokens", 0),
+            "completion_tokens": (
+                post_stats.get("completion_tokens", 0)
+                - pre_stats.get("completion_tokens", 0)
+            ),
             "total_calls": post_stats.get("total_calls", 0) - pre_stats.get("total_calls", 0),
         }
 

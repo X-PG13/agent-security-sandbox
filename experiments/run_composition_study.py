@@ -45,7 +45,7 @@ from agent_security_sandbox.evaluation.benchmark import BenchmarkSuite
 from agent_security_sandbox.evaluation.runner import ExperimentRunner
 
 # Active defenses (D0 is baseline / no defense, excluded from combinations)
-ACTIVE_DEFENSES = ["D1", "D2", "D3", "D4", "D5"]
+ACTIVE_DEFENSES = ["D1", "D2", "D3", "D4", "D5", "D6", "D7"]
 
 
 def _make_json_safe(obj: Any) -> Any:
@@ -103,6 +103,8 @@ def parse_args() -> argparse.Namespace:
                         help="Maximum number of defenses in a combination.")
     parser.add_argument("--resume", action="store_true",
                         help="Skip combos that already have result files.")
+    parser.add_argument("--no-function-calling", action="store_true",
+                        help="Use text ReAct mode instead of function calling.")
     return parser.parse_args()
 
 
@@ -154,6 +156,7 @@ def main() -> None:
                 llm_client=llm,
                 tool_registry_factory=ToolRegistry,
                 defense_strategy=defense,
+                use_function_calling=not args.no_function_calling,
             )
 
             start = time.time()

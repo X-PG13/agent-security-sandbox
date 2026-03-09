@@ -249,10 +249,8 @@ class TaskAlignmentDefense(DefenseStrategy):
         ]
 
         try:
-            response_text, _tokens = self.llm_client.call(
-                messages, max_tokens=200
-            )
-            score, explanation = self._parse_judge_response(response_text)
+            resp = self.llm_client.call(messages, max_tokens=200)
+            score, explanation = self._parse_judge_response(resp.content)
             return score, explanation
         except Exception as exc:
             # Fallback to rule-based on LLM failure

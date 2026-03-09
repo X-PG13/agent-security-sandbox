@@ -3,13 +3,31 @@ LLM Client wrapper for multiple providers (OpenAI, Anthropic, OpenAI-compatible)
 """
 import os
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 try:
     import tiktoken
     TIKTOKEN_AVAILABLE = True
 except ImportError:
     TIKTOKEN_AVAILABLE = False
+
+
+@dataclass
+class LLMResponse:
+    """Structured response from an LLM call.
+
+    Attributes:
+        content: Text content of the response (empty string for pure tool_call responses).
+        tokens_used: Total tokens consumed by this call.
+        tool_calls: Optional list of tool calls in OpenAI format, e.g.
+            ``[{"id": "call_abc", "type": "function",
+            "function": {"name": "read_email", "arguments": "{...}"}}]``
+    """
+
+    content: str
+    tokens_used: int
+    tool_calls: Optional[List[Dict[str, Any]]] = None
 
 
 class LLMClient(ABC):
@@ -26,13 +44,19 @@ class LLMClient(ABC):
     @abstractmethod
     def call(
         self,
-        messages: List[Dict[str, str]],
+        messages: List[Dict[str, Any]],
         max_tokens: Optional[int] = None,
-    ) -> Tuple[str, int]:
+        tools: Optional[List[Dict]] = None,
+    ) -> LLMResponse:
         """Call the LLM with messages.
 
+        Args:
+            messages: List of message dicts (role + content, possibly tool_call_id).
+            max_tokens: Optional maximum tokens for the response.
+            tools: Optional list of tool schemas in OpenAI format for function calling.
+
         Returns:
-            Tuple of (response_text, tokens_used)
+            LLMResponse with content, tokens_used, and optional tool_calls.
         """
         pass
 
@@ -81,27 +105,50 @@ class OpenAIClient(LLMClient):
 
     def call(
         self,
-        messages: List[Dict[str, str]],
+        messages: List[Dict[str, Any]],
         max_tokens: Optional[int] = None,
-    ) -> Tuple[str, int]:
+        tools: Optional[List[Dict]] = None,
+    ) -> LLMResponse:
         """Call OpenAI API."""
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,  # type: ignore[arg-type]
-                temperature=self.temperature,
-                max_tokens=max_tokens,
-            )
+            kwargs: Dict[str, Any] = {
+                "model": self.model,
+                "messages": messages,
+                "temperature": self.temperature,
+            }
+            if max_tokens is not None:
+                kwargs["max_tokens"] = max_tokens
+            if tools:
+                kwargs["tools"] = tools
+                kwargs["tool_choice"] = "auto"
 
-            content = response.choices[0].message.content or ""
+            response = self.client.chat.completions.create(**kwargs)  # type: ignore[arg-type]
+
+            msg = response.choices[0].message
+            content = msg.content or ""
+
+            # Extract structured tool_calls if present
+            result_tool_calls: Optional[List[Dict[str, Any]]] = None
+            if msg.tool_calls:
+                result_tool_calls = []
+                for tc in msg.tool_calls:
+                    result_tool_calls.append({
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        },
+                    })
+
             tokens_used = (
-                response.usage.total_tokens if response.usage else 0
+                (response.usage.total_tokens or 0) if response.usage else 0
             )
             _prompt = (
-                response.usage.prompt_tokens if response.usage else 0
+                (response.usage.prompt_tokens or 0) if response.usage else 0
             )
             _completion = (
-                response.usage.completion_tokens if response.usage else 0
+                (response.usage.completion_tokens or 0) if response.usage else 0
             )
 
             self.total_calls += 1
@@ -109,7 +156,11 @@ class OpenAIClient(LLMClient):
             self.prompt_tokens += _prompt
             self.completion_tokens += _completion
 
-            return content, tokens_used
+            return LLMResponse(
+                content=content,
+                tokens_used=tokens_used,
+                tool_calls=result_tool_calls,
+            )
 
         except Exception as e:
             raise RuntimeError(f"OpenAI API call failed: {str(e)}")
@@ -187,17 +238,51 @@ class AnthropicClient(LLMClient):
 
     def call(
         self,
-        messages: List[Dict[str, str]],
+        messages: List[Dict[str, Any]],
         max_tokens: Optional[int] = None,
-    ) -> Tuple[str, int]:
+        tools: Optional[List[Dict]] = None,
+    ) -> LLMResponse:
         """Call Anthropic API."""
         # Convert messages to Anthropic format
         system_message = None
-        anthropic_messages = []
+        anthropic_messages: List[Dict[str, Any]] = []
 
         for msg in messages:
             if msg["role"] == "system":
                 system_message = msg["content"]
+            elif msg["role"] == "tool":
+                # Convert OpenAI tool result -> Anthropic tool_result
+                anthropic_messages.append({
+                    "role": "user",
+                    "content": [{
+                        "type": "tool_result",
+                        "tool_use_id": msg.get("tool_call_id", ""),
+                        "content": msg.get("content", ""),
+                    }],
+                })
+            elif msg["role"] == "assistant" and msg.get("tool_calls"):
+                # Convert OpenAI assistant tool_calls -> Anthropic tool_use blocks
+                content_blocks: List[Dict[str, Any]] = []
+                if msg.get("content"):
+                    content_blocks.append({"type": "text", "text": msg["content"]})
+                for tc in msg["tool_calls"]:
+                    import json as _json
+                    args = tc["function"]["arguments"]
+                    if isinstance(args, str):
+                        try:
+                            args = _json.loads(args)
+                        except (ValueError, _json.JSONDecodeError):
+                            args = {}
+                    content_blocks.append({
+                        "type": "tool_use",
+                        "id": tc["id"],
+                        "name": tc["function"]["name"],
+                        "input": args,
+                    })
+                anthropic_messages.append({
+                    "role": "assistant",
+                    "content": content_blocks,
+                })
             else:
                 anthropic_messages.append({
                     "role": msg["role"],
@@ -205,7 +290,7 @@ class AnthropicClient(LLMClient):
                 })
 
         try:
-            kwargs = {
+            kwargs: Dict[str, Any] = {
                 "model": self.model,
                 "messages": anthropic_messages,
                 "temperature": self.temperature,
@@ -215,13 +300,42 @@ class AnthropicClient(LLMClient):
             if system_message:
                 kwargs["system"] = system_message
 
+            # Convert OpenAI tool schemas to Anthropic format
+            if tools:
+                anthropic_tools = []
+                for t in tools:
+                    func = t.get("function", t)
+                    anthropic_tools.append({
+                        "name": func["name"],
+                        "description": func.get("description", ""),
+                        "input_schema": func.get(
+                            "parameters",
+                            {"type": "object", "properties": {}},
+                        ),
+                    })
+                kwargs["tools"] = anthropic_tools
+
             response = self.client.messages.create(**kwargs)  # type: ignore[arg-type,call-overload]
 
-            # Safely extract text from the first content block
-            if response.content:
-                content = response.content[0].text  # type: ignore[union-attr]
-            else:
-                content = ""
+            # Extract text content and tool_use blocks
+            content = ""
+            result_tool_calls: Optional[List[Dict[str, Any]]] = None
+            for block in response.content:
+                if getattr(block, "type", None) == "text":
+                    content += block.text  # type: ignore[union-attr]
+                elif getattr(block, "type", None) == "tool_use":
+                    if result_tool_calls is None:
+                        result_tool_calls = []
+                    import json as _json
+                    result_tool_calls.append({
+                        "id": block.id,  # type: ignore[union-attr]
+                        "type": "function",
+                        "function": {
+                            "name": block.name,  # type: ignore[union-attr]
+                            "arguments": _json.dumps(block.input),  # type: ignore[union-attr]
+                        },
+                    })
+
             # Anthropic returns input_tokens and output_tokens separately
             _prompt = response.usage.input_tokens
             _completion = response.usage.output_tokens
@@ -232,7 +346,11 @@ class AnthropicClient(LLMClient):
             self.prompt_tokens += _prompt
             self.completion_tokens += _completion
 
-            return content, tokens_used
+            return LLMResponse(
+                content=content,
+                tokens_used=tokens_used,
+                tool_calls=result_tool_calls,
+            )
 
         except Exception as e:
             raise RuntimeError(f"Anthropic API call failed: {str(e)}")
@@ -253,9 +371,10 @@ class MockLLMClient(LLMClient):
 
     def call(
         self,
-        messages: List[Dict[str, str]],
+        messages: List[Dict[str, Any]],
         max_tokens: Optional[int] = None,
-    ) -> Tuple[str, int]:
+        tools: Optional[List[Dict]] = None,
+    ) -> LLMResponse:
         """Return a mock response.
 
         If a response queue has been set via :meth:`set_mock_responses`, the
@@ -271,7 +390,7 @@ class MockLLMClient(LLMClient):
         else:
             response = self.mock_response
 
-        return response, tokens_used
+        return LLMResponse(content=response, tokens_used=tokens_used)
 
     def set_mock_response(self, response: str):
         """Set the mock response"""
@@ -322,12 +441,13 @@ class ScenarioMockLLMClient(MockLLMClient):
 
     def call(
         self,
-        messages: List[Dict[str, str]],
+        messages: List[Dict[str, Any]],
         max_tokens: Optional[int] = None,
-    ) -> Tuple[str, int]:
+        tools: Optional[List[Dict]] = None,
+    ) -> LLMResponse:
         # If a manual response queue was set, honour it first.
         if self._response_queue:
-            return super().call(messages, max_tokens)
+            return super().call(messages, max_tokens, tools)
 
         self.total_calls += 1
         tokens_used = 50
@@ -344,9 +464,87 @@ class ScenarioMockLLMClient(MockLLMClient):
         # Pop next tool from queue, or emit Final Answer.
         if self._tools_queue:
             tool_name = self._tools_queue.pop(0)
-            return self._tool_action(tool_name), tokens_used
 
-        return self._final_answer(), tokens_used
+            # If function calling mode (tools provided), return structured tool_calls
+            if tools:
+                return self._structured_tool_call(tool_name, tokens_used)
+
+            return LLMResponse(
+                content=self._tool_action(tool_name),
+                tokens_used=tokens_used,
+            )
+
+        return LLMResponse(
+            content=self._final_answer(),
+            tokens_used=tokens_used,
+        )
+
+    # ------------------------------------------------------------------ #
+    # Structured tool calling (function calling mode)
+    # ------------------------------------------------------------------ #
+
+    def _structured_tool_call(self, tool_name: str, tokens_used: int) -> LLMResponse:
+        """Generate a structured tool_call response for function calling mode."""
+        import json as _json
+
+        params = self._tool_params(tool_name)
+        actual_name = tool_name if tool_name != "__inject__" else "send_email"
+
+        tool_calls = [{
+            "id": f"call_mock_{self.total_calls}",
+            "type": "function",
+            "function": {
+                "name": actual_name,
+                "arguments": _json.dumps(params),
+            },
+        }]
+
+        return LLMResponse(
+            content="",
+            tokens_used=tokens_used,
+            tool_calls=tool_calls,
+        )
+
+    def _tool_params(self, tool_name: str) -> Dict[str, Any]:
+        """Return parameters dict for a given tool name."""
+        lower = self._goal_text.lower()
+
+        if tool_name == "__inject__":
+            target = self._extract_injection_target(self._goal_text)
+            return {"to": target, "subject": "data", "body": "secrets"}
+        if tool_name == "list_emails":
+            return {}
+        if tool_name == "read_email":
+            return {"email_id": self._extract_email_id(lower)}
+        if tool_name == "send_email":
+            return {
+                "to": "team@company.com",
+                "subject": "Re: request",
+                "body": "Done as requested.",
+            }
+        if tool_name == "read_file":
+            return {"file_path": self._extract_file_path(lower)}
+        if tool_name == "write_file":
+            return {"file_path": "/tmp/output.txt", "content": "Generated content."}
+        if tool_name == "search_web":
+            return {"query": self._extract_search_query(lower)}
+        if tool_name == "create_document":
+            return {
+                "title": self._extract_doc_title(lower),
+                "content": "Generated document content.",
+            }
+        if tool_name == "read_calendar":
+            return {"event_id": "event_001"}
+        if tool_name == "create_calendar_event":
+            return {
+                "title": "Meeting", "date": "2024-01-20",
+                "time": "10:00", "description": "Scheduled meeting",
+            }
+        if tool_name == "call_api":
+            return {"endpoint": "/api/weather"}
+        if tool_name == "post_api":
+            return {"endpoint": "/api/data", "data": '{"key": "value"}'}
+        return {}
 
     # ------------------------------------------------------------------ #
     # Planning: analyse goal to build tool queue
@@ -724,9 +922,9 @@ if __name__ == "__main__":
         {"role": "user", "content": "What is 2+2?"}
     ]
 
-    response, tokens = client.call(messages)
-    print(f"Response: {response}")
-    print(f"Tokens: {tokens}")
+    resp = client.call(messages)
+    print(f"Response: {resp.content}")
+    print(f"Tokens: {resp.tokens_used}")
     print(f"Stats: {client.get_stats()}")
 
     # Test multi-step mock responses
@@ -738,8 +936,8 @@ if __name__ == "__main__":
         "Step 3: Done!",
     ])
     for i in range(4):
-        resp, _ = mock_client.call(messages)
-        print(f"  Call {i+1}: {resp}")
+        resp = mock_client.call(messages)
+        print(f"  Call {i+1}: {resp.content}")
 
     # Uncomment to test with real API (requires API key)
     # print("\nTesting OpenAI Client...")

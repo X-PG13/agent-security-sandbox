@@ -9,7 +9,7 @@ blocked.
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 
 from ..core.agent import AgentStep, AgentTrajectory
 from .benchmark import BenchmarkCase
@@ -43,6 +43,15 @@ class JudgeResult:
     details: Dict[str, Any] = field(default_factory=dict)
     quality_score: Optional[float] = None
     llm_reasoning: Optional[str] = None
+
+
+@runtime_checkable
+class Judge(Protocol):
+    """Protocol for all judge implementations."""
+
+    def judge(
+        self, case: BenchmarkCase, trajectory: AgentTrajectory
+    ) -> JudgeResult: ...
 
 
 class AutoJudge:
