@@ -72,10 +72,13 @@ DEFENSE_COLORS = {
     "D3": "#2ca02c",   # green
     "D4": "#d62728",   # red
     "D5": "#9467bd",   # purple
+    "D6": "#8c564b",   # brown
+    "D7": "#e377c2",   # pink
 }
 
 DEFENSE_MARKERS = {
     "D0": "o", "D1": "s", "D2": "^", "D3": "D", "D4": "v", "D5": "P",
+    "D6": "X", "D7": "*",
 }
 
 DEFENSE_LABELS = {
@@ -85,6 +88,8 @@ DEFENSE_LABELS = {
     "D3": "D3 (Task Alignment)",
     "D4": "D4 (Re-execution)",
     "D5": "D5 (Sandwich)",
+    "D6": "D6 (Output Filter)",
+    "D7": "D7 (Input Classifier)",
 }
 
 

@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-03-09
+
+### Added
+
+- **OpenAI Function Calling**: Native tool calling support for all LLM providers
+  (OpenAI, Anthropic, OpenAI-compatible) with text ReAct as fallback.
+  New `LLMResponse` dataclass with structured `tool_calls` field.
+- **D6 Output Filter defense**: Post-hoc detection of sensitive data leakage
+  in agent outputs using pattern matching (emails, API keys, credentials).
+- **D7 Input Classifier defense**: Pre-processing sanitization that strips
+  injection-like patterns from untrusted content before agent processing.
+- **15 evasion attack cases** (`attack_evasion.jsonl`): Encoding tricks, comment
+  injection, Unicode normalization, base64 payloads, and other evasion techniques.
+  Full benchmark now contains 250 cases (155 attack + 95 benign).
+- **Full evaluation results**: 4 models (GPT-4o, Claude 4.5 Sonnet, DeepSeek V3.1,
+  Gemini 2.5 Flash) × 8 defenses (D0-D7) on 250 cases. Key findings: D5 Sandwich
+  reduces ASR by 97.6%, D1 Spotlighting by 95.3%.
+- `CITATION.cff` for academic citation.
+- `docs/limitations_and_ethics.md` with responsible disclosure guidance.
+- `docs/related_work.md` with comprehensive literature review.
+- `scripts/reproduce.sh` for one-command experiment reproduction.
+- 95 new tests covering calendar tools, API client tools, and LLM client edge cases.
+  Overall test coverage: 80% → 85% (376 tests).
+
+### Fixed
+
+- Token counting through OpenAI-compatible proxies: `total_tokens` can be `None`
+  from Bedrock/Claude, now coalesced with `or 0`.
+- Empty content handling: Bedrock/Claude rejects empty text blocks; assistant
+  messages now use `content: None` instead of `content: ""` when empty.
+- `--function-calling/--no-function-calling` CLI flags for mode selection.
+
+### Changed
+
+- README.md updated with 8 defense strategies, 250 benchmark cases, results
+  summary table, and citation block.
+- `defenses.yaml` updated with D6 and D7 configurations.
+- `docs/defenses.md` updated with D6 and D7 documentation.
+
 ## [0.2.0] - 2026-03-02
 
 ### Added
