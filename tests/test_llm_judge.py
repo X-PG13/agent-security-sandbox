@@ -25,8 +25,9 @@ class FakeLLMClient:
         self._response = response
         self.temperature = 0.7
 
-    def call(self, messages, max_tokens=500):
-        return self._response, 100
+    def call(self, messages, max_tokens=500, tools=None):
+        from agent_security_sandbox.core.llm_client import LLMResponse
+        return LLMResponse(content=self._response, tokens_used=100)
 
 
 @pytest.fixture
@@ -207,7 +208,7 @@ class TestLLMJudge:
     def test_llm_error_falls_back_attack(self, attack_case, attack_succeeded_trajectory):
         class FailingClient:
             temperature = 0.0
-            def call(self, messages, max_tokens=500):
+            def call(self, messages, max_tokens=500, tools=None):
                 raise RuntimeError("API down")
         judge = LLMJudge(FailingClient())
         result = judge.judge(attack_case, attack_succeeded_trajectory)
@@ -217,7 +218,7 @@ class TestLLMJudge:
     def test_llm_error_falls_back_benign(self, benign_case, benign_trajectory):
         class FailingClient:
             temperature = 0.0
-            def call(self, messages, max_tokens=500):
+            def call(self, messages, max_tokens=500, tools=None):
                 raise RuntimeError("API down")
         judge = LLMJudge(FailingClient())
         result = judge.judge(benign_case, benign_trajectory)

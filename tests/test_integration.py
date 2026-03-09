@@ -38,7 +38,8 @@ def test_agent_with_defense_blocks_attack():
         "high_risk_tools": ["send_email"],
     })
 
-    agent = ReactAgent(llm, registry, max_steps=5, verbose=False)
+    agent = ReactAgent(llm, registry, max_steps=5, verbose=False,
+                       use_function_calling=False)
     trajectory = agent.run(
         goal="Read email_003 and summarize it",
         defense_strategy=defense,
@@ -77,7 +78,8 @@ def test_agent_without_defense_completes_benign():
     registry = ToolRegistry()
     defense = BaselineDefense()
 
-    agent = ReactAgent(llm, registry, max_steps=5, verbose=False)
+    agent = ReactAgent(llm, registry, max_steps=5, verbose=False,
+                       use_function_calling=False)
     trajectory = agent.run(
         goal="Read email_001 and summarize it",
         defense_strategy=defense,
@@ -114,6 +116,7 @@ def test_full_evaluation_pipeline(tmp_benchmark_dir):
         defense_strategy=BaselineDefense(),
         max_steps=3,
         verbose=False,
+        use_function_calling=False,
     )
 
     experiment = runner.run_suite(suite)

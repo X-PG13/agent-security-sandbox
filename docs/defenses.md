@@ -57,10 +57,86 @@ Detects injection by comparing agent behavior with and without untrusted content
 
 **Fallback**: Without an LLM client, uses heuristic comparison checking whether parameter values contain fragments from untrusted content.
 
+## D5: Sandwich Defense
+
+Encloses untrusted content between two copies of the user's original goal, anchoring the model's attention on the legitimate task both before and after encountering potentially injected instructions.
+
+**Structure**:
+```
+[Goal]
+[Warning] (optional)
+[Delimiter Start]
+[Untrusted Content]
+[Delimiter End]
+[Reminder: repeat the Goal]
+```
+
+**Mechanism**: Prompt modification only. Does not gate tool calls.
+
+## D6: Output Filter
+
+Content-based heuristic defense that inspects outgoing tool call parameters for suspicious patterns indicating the agent has been manipulated.
+
+**Detection heuristics**:
+1. **Injection phrase echo**: Detects phrases like "ignore previous instructions" in parameters
+2. **Exfiltration patterns**: Blocks emails to non-whitelisted domains and suspicious URLs
+3. **Secret leakage**: Detects API keys, tokens, passwords in outgoing data
+
+**Configuration**:
+```yaml
+check_injection_phrases: true
+check_exfiltration: true
+check_secrets: true
+allowed_domains: [company.com]
+monitored_tools: [send_email, write_file, create_document, post_api, call_api]
+```
+
+**Mechanism**: Tool-gating defense. Does not modify prompts.
+
+## D7: Input Classifier
+
+Pre-processing defense that scans untrusted content for injection payloads before it reaches the LLM. Uses weighted regex-based scoring to detect injection patterns.
+
+**Detection approach**:
+1. **Keyword scoring**: Assigns weighted scores to injection-related phrases (instruction override, role switching, action commands, social engineering)
+2. **Structural analysis**: Detects role-switching patterns (`[SYSTEM]`, `--- NEW INSTRUCTIONS ---`)
+3. **Threshold decision**: Content above the threshold is sanitized
+
+**Actions when injection detected**:
+- `replace` (default): Replace content with a warning message
+- `strip`: Remove detected injection portions, keep clean content
+- `flag`: Pass through with a prepended warning
+
+**Configuration**:
+```yaml
+threshold: 3.0
+action: "replace"  # or "strip" or "flag"
+flag_tool_observations: false
+```
+
+**Mechanism**: Primarily prompt-layer (pre-processing). Optional tool-gating via `flag_tool_observations`.
+
+## Defense Taxonomy
+
+| Defense | Layer | Modifies Prompt | Gates Tools | Needs LLM |
+|---------|-------|:-:|:-:|:-:|
+| D0 Baseline | — | — | — | — |
+| D1 Spotlighting | Prompt | Yes | No | No |
+| D2 Policy Gate | Tool | No | Yes | No |
+| D3 Task Alignment | Tool | No | Yes | Optional |
+| D4 Re-execution | Tool | No | Yes | Optional |
+| D5 Sandwich | Prompt | Yes | No | No |
+| D6 Output Filter | Tool | No | Yes | No |
+| D7 Input Classifier | Pre-processing | Yes | Optional | No |
+
 ## Composite Defenses
 
 Multiple strategies can be combined using `CompositeDefense`:
 - `prepare_context`: Applied sequentially (each defense's output feeds the next)
 - `should_allow_tool_call`: Any single block causes overall block
 
-Example: D1+D2+D3 applies spotlighting, then policy gating, then alignment checking.
+Example combinations:
+- **D1+D2+D3**: Spotlighting + policy gating + alignment checking
+- **D6+D7**: Output filter + input classifier (content-level defense pair)
+- **D5+D7**: Sandwich + input classifier (prompt+content)
+- **D1+D6+D7**: Spotlighting + output filter + input classifier (multi-layer)

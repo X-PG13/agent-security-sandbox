@@ -10,6 +10,8 @@ from agent_security_sandbox.evaluation.analysis import (
     ComparisonResult,
     ConfidenceInterval,
     CostBenefit,
+    DifficultyAnalysis,
+    DifficultyCell,
     StatisticalAnalyzer,
     mcnemar_test,
     wilson_score_interval,
@@ -378,3 +380,111 @@ class TestReporterAnalysis:
         reporter = Reporter()
         md = reporter.generate_analysis_markdown(report)
         assert "Statistical Analysis Report" in md
+
+
+# ---------------------------------------------------------------------------
+# Tests: Difficulty Analysis
+# ---------------------------------------------------------------------------
+
+class TestDifficultyAnalysis:
+    def test_difficulty_analysis_present(self):
+        """analyze() should populate difficulty_analysis."""
+        cases = [
+            _make_attack_case("a1", difficulty="easy"),
+            _make_attack_case("a2", difficulty="easy"),
+            _make_attack_case("a3", difficulty="hard"),
+            _make_attack_case("a4", difficulty="hard"),
+        ]
+        results = [
+            _make_attack_result("a1", True),   # easy, succeeded
+            _make_attack_result("a2", False),  # easy, blocked
+            _make_attack_result("a3", True),   # hard, succeeded
+            _make_attack_result("a4", True),   # hard, succeeded
+        ]
+        er = _make_experiment(
+            "D0", results, [],
+            attack_cases=cases, benign_cases=[],
+        )
+        analyzer = StatisticalAnalyzer()
+        report = analyzer.analyze([er])
+
+        da = report.difficulty_analysis
+        assert da is not None
+        assert "easy" in da.difficulty_levels
+        assert "hard" in da.difficulty_levels
+        assert "D0" in da.rows
+
+        cells = da.rows["D0"]
+        easy_cell = next(c for c in cells if c.difficulty == "easy")
+        hard_cell = next(c for c in cells if c.difficulty == "hard")
+
+        assert easy_cell.n_attack == 2
+        assert easy_cell.n_succeeded == 1
+        assert abs(easy_cell.asr - 0.5) < 1e-9
+
+        assert hard_cell.n_attack == 2
+        assert hard_cell.n_succeeded == 2
+        assert abs(hard_cell.asr - 1.0) < 1e-9
+
+    def test_difficulty_analysis_multiple_defenses(self):
+        """Cross-table should have rows for each defence."""
+        cases = [
+            _make_attack_case("a1", difficulty="easy"),
+            _make_attack_case("a2", difficulty="hard"),
+        ]
+        d0 = _make_experiment(
+            "D0",
+            [_make_attack_result("a1", True),
+             _make_attack_result("a2", True)],
+            [], attack_cases=cases, benign_cases=[],
+        )
+        d1 = _make_experiment(
+            "D1",
+            [_make_attack_result("a1", False),
+             _make_attack_result("a2", True)],
+            [], attack_cases=cases, benign_cases=[],
+        )
+
+        analyzer = StatisticalAnalyzer()
+        report = analyzer.analyze([d0, d1])
+
+        da = report.difficulty_analysis
+        assert "D0" in da.rows
+        assert "D1" in da.rows
+
+        # D0: easy ASR=1.0, hard ASR=1.0
+        d0_easy = next(
+            c for c in da.rows["D0"] if c.difficulty == "easy"
+        )
+        assert abs(d0_easy.asr - 1.0) < 1e-9
+
+        # D1: easy ASR=0.0 (blocked), hard ASR=1.0
+        d1_easy = next(
+            c for c in da.rows["D1"] if c.difficulty == "easy"
+        )
+        assert abs(d1_easy.asr - 0.0) < 1e-9
+
+    def test_difficulty_analysis_empty(self):
+        """Empty results should produce empty difficulty analysis."""
+        analyzer = StatisticalAnalyzer()
+        report = analyzer.analyze([])
+        da = report.difficulty_analysis
+        assert da is not None
+        assert da.difficulty_levels == []
+        assert da.rows == {}
+
+    def test_difficulty_cell_has_ci(self):
+        """Each DifficultyCell should have a confidence interval."""
+        cases = [_make_attack_case("a1", difficulty="medium")]
+        results = [_make_attack_result("a1", True)]
+        er = _make_experiment(
+            "D0", results, [],
+            attack_cases=cases, benign_cases=[],
+        )
+        analyzer = StatisticalAnalyzer()
+        report = analyzer.analyze([er])
+
+        cell = report.difficulty_analysis.rows["D0"][0]
+        assert cell.ci is not None
+        assert cell.ci.metric_name == "ASR_medium"
+        assert cell.ci.n == 1
