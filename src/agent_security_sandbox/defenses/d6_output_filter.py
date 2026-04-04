@@ -19,6 +19,8 @@ Detection heuristics:
 
 This is a tool-gating defense and does not modify the prompt.
 """
+from __future__ import annotations
+
 import re
 from typing import Any, Dict, List, Tuple
 
