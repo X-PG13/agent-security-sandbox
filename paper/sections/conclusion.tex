@@ -1,0 +1,7 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We introduced the \textbf{Agent Security Sandbox} (\asb{}), a benchmark framework comprising 565 test cases, 11 defense strategies, and an automated evaluation pipeline.
+Our evaluation across 4 frontier LLMs (132 runs) reveals that simple prompt-level defenses (D5: 97.5\% attack reduction, 93.4\% benign completion) dramatically outperform complex tool-gating approaches by amplifying the model's alignment signal; model robustness varies 4--5$\times$ across families; defense composition is additive with diminishing returns; and input sanitization is counterproductive.
+We also contributed \civ{}, a novel multi-signal defense demonstrating that information-flow analysis provides a complementary defense mechanism.
+\asb{} is released as open-source to support reproducible research on LLM agent security.

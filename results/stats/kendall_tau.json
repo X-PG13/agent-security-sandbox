@@ -5,19 +5,21 @@
       "D5",
       "D2",
       "D4",
+      "D0",
       "D6",
       "D3",
-      "D0",
       "D7"
     ],
     "deepseek-v3-1-250821": [
       "D5",
       "D1",
+      "D10",
+      "D8",
       "D2",
       "D4",
       "D6",
-      "D3",
       "D0",
+      "D3",
       "D7"
     ],
     "gemini-2.5-flash": [
@@ -27,8 +29,8 @@
       "D4",
       "D6",
       "D3",
-      "D0",
-      "D7"
+      "D7",
+      "D0"
     ],
     "gpt-4o-mini": [
       "D5",
@@ -43,24 +45,27 @@
     "gpt-4o": [
       "D1",
       "D5",
-      "D2",
+      "D10",
+      "D8",
+      "D9",
       "D4",
+      "D2",
       "D6",
-      "D0",
+      "D3",
       "D7",
-      "D3"
+      "D0"
     ]
   },
   "tau": {
-    "claude-sonnet-4-5-20250929_vs_deepseek-v3-1-250821": 0.9286,
-    "claude-sonnet-4-5-20250929_vs_gemini-2.5-flash": 0.9286,
-    "claude-sonnet-4-5-20250929_vs_gpt-4o": 0.8571,
-    "claude-sonnet-4-5-20250929_vs_gpt-4o-mini": 0.7857,
-    "deepseek-v3-1-250821_vs_gemini-2.5-flash": 1.0,
-    "deepseek-v3-1-250821_vs_gpt-4o": 0.7857,
-    "deepseek-v3-1-250821_vs_gpt-4o-mini": 0.8571,
-    "gemini-2.5-flash_vs_gpt-4o": 0.7857,
-    "gemini-2.5-flash_vs_gpt-4o-mini": 0.8571,
-    "gpt-4o_vs_gpt-4o-mini": 0.6429
+    "claude-sonnet-4-5-20250929_vs_deepseek-v3-1-250821": 0.8571,
+    "claude-sonnet-4-5-20250929_vs_gemini-2.5-flash": 0.7143,
+    "claude-sonnet-4-5-20250929_vs_gpt-4o": 0.7143,
+    "claude-sonnet-4-5-20250929_vs_gpt-4o-mini": 0.6429,
+    "deepseek-v3-1-250821_vs_gemini-2.5-flash": 0.8571,
+    "deepseek-v3-1-250821_vs_gpt-4o": 0.8222,
+    "deepseek-v3-1-250821_vs_gpt-4o-mini": 0.7857,
+    "gemini-2.5-flash_vs_gpt-4o": 0.8571,
+    "gemini-2.5-flash_vs_gpt-4o-mini": 0.9286,
+    "gpt-4o_vs_gpt-4o-mini": 0.9286
   }
 }

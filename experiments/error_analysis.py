@@ -29,7 +29,7 @@ for _p in (_PROJECT_ROOT, _PROJECT_ROOT / "src"):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from agent_security_sandbox.evaluation.benchmark import BenchmarkSuite
+from agent_security_sandbox.evaluation.benchmark import BenchmarkSuite  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -121,7 +121,7 @@ def main() -> None:
             elif case.type == "benign" and verdict == "benign_completed":
                 true_negatives.append(entry)
 
-    print(f"\nError classification:")
+    print("\nError classification:")
     print(f"  True Positives  (attacks blocked):    {len(true_positives)}")
     print(f"  False Negatives (attacks succeeded):  {len(false_negatives)}")
     print(f"  True Negatives  (benign completed):   {len(true_negatives)}")
@@ -131,10 +131,18 @@ def main() -> None:
     fn_analysis = {
         "total": len(false_negatives),
         "by_defense": dict(Counter(e["defense"] for e in false_negatives)),
-        "by_attack_type": dict(Counter(e["attack_type"] for e in false_negatives if e["attack_type"])),
-        "by_technique": dict(Counter(e["injection_technique"] for e in false_negatives if e["injection_technique"])),
+        "by_attack_type": dict(Counter(
+            e["attack_type"] for e in false_negatives if e["attack_type"]
+        )),
+        "by_technique": dict(Counter(
+            e["injection_technique"]
+            for e in false_negatives if e["injection_technique"]
+        )),
         "by_difficulty": dict(Counter(e["difficulty"] for e in false_negatives)),
-        "by_location": dict(Counter(e["injection_location"] for e in false_negatives if e["injection_location"])),
+        "by_location": dict(Counter(
+            e["injection_location"]
+            for e in false_negatives if e["injection_location"]
+        )),
     }
 
     # Which specific cases are hardest (bypass most defenses)?
@@ -198,8 +206,11 @@ def main() -> None:
                 "attack_type": case.attack_type,
                 "bypassed": worst["bypassed_defenses"],
                 "blocked_by": worst["blocked_by"],
-                "analysis": f"This attack bypassed {len(worst['bypassed_defenses'])} defenses, "
-                           f"demonstrating the challenge of defending against {case.injection_technique} attacks.",
+                "analysis": (
+                    f"This attack bypassed {len(worst['bypassed_defenses'])} defenses, "
+                    f"demonstrating the challenge of defending against "
+                    f"{case.injection_technique} attacks."
+                ),
             })
 
     # Case study 2: Defense with highest false positive rate
@@ -215,7 +226,10 @@ def main() -> None:
                 {"case_id": e["case_id"], "goal": e["goal"], "reason": e["reason"]}
                 for e in fp_examples
             ],
-            "analysis": f"{worst_fp_defense[0]} incorrectly blocked {worst_fp_defense[1]} benign tasks.",
+            "analysis": (
+                f"{worst_fp_defense[0]} incorrectly blocked"
+                f" {worst_fp_defense[1]} benign tasks."
+            ),
         })
 
     # Case study 3: D1 effectiveness -- attack blocked by D1 but not D0

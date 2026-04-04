@@ -3,12 +3,12 @@
     "deepseek-v3-1-250821"
   ],
   "defenses": [
-    "D0"
+    "D10"
   ],
   "runs": 1,
   "benchmark_dir": "data/full_benchmark",
   "provider": "openai-compatible",
   "base_url": "https://gateway.2077ai.org/v1",
   "max_steps": 10,
-  "timestamp": "2026-03-09T09:07:44.284044"
+  "timestamp": "2026-03-16T02:04:45.170981"
 }

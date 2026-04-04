@@ -22,11 +22,14 @@ for _p in (_PROJECT_ROOT, _PROJECT_ROOT / "src"):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from agent_security_sandbox.core.llm_client import create_llm_client
-from agent_security_sandbox.tools.registry import ToolRegistry
-from agent_security_sandbox.defenses.registry import create_defense, create_composite_defense
-from agent_security_sandbox.evaluation.benchmark import BenchmarkSuite
-from agent_security_sandbox.evaluation.runner import ExperimentRunner
+from agent_security_sandbox.core.llm_client import create_llm_client  # noqa: E402
+from agent_security_sandbox.defenses.registry import (  # noqa: E402
+    create_composite_defense,
+    create_defense,
+)
+from agent_security_sandbox.evaluation.benchmark import BenchmarkSuite  # noqa: E402
+from agent_security_sandbox.evaluation.runner import ExperimentRunner  # noqa: E402
+from agent_security_sandbox.tools.registry import ToolRegistry  # noqa: E402
 
 COMBINATIONS: List[Dict[str, Any]] = [
     {"name": "D0 (No Defense)", "defenses": ["D0"]},
@@ -84,7 +87,11 @@ def main() -> None:
             "metrics": {k: v for k, v in metrics.items() if not k.startswith("_")},
             "timestamp": datetime.now().isoformat(),
         }
-        print(f"  ASR={result.metrics.asr:.4f} BSR={result.metrics.bsr:.4f} FPR={result.metrics.fpr:.4f}")
+        print(
+            f"  ASR={result.metrics.asr:.4f}"
+            f" BSR={result.metrics.bsr:.4f}"
+            f" FPR={result.metrics.fpr:.4f}"
+        )
 
     # Save results
     output_path = output_dir / "ablation_results.json"

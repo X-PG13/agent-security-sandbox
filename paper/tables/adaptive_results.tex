@@ -1,0 +1,30 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Adaptive attack resilience (GPT-4o attacker, 10 campaigns, 5 iterations each). Adaptive ASR = fraction of campaigns where the attacker eventually bypassed the defense. Resilience tier: \textbf{H}igh (0\%), \textbf{M}edium ($<$50\%), \textbf{L}ow ($\geq$50\%).}
+\label{tab:adaptive}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{l rr c}
+\toprule
+Defense & Adaptive ASR & Avg Iters & Tier \\
+\midrule
+D0 Baseline          & 0.300 & 3.8 & M \\
+\midrule
+D1 Spotlighting      & \textbf{0.000} & --- & \textbf{H} \\
+D2 Policy Gate       & \textbf{0.000} & --- & \textbf{H} \\
+D5 Sandwich          & \textbf{0.000} & --- & \textbf{H} \\
+D6 Output Filter     & \textbf{0.000} & --- & \textbf{H} \\
+D8 Semantic Firewall & \textbf{0.000} & --- & \textbf{H} \\
+D10 \textbf{CIV}     & \textbf{0.000} & --- & \textbf{H} \\
+\midrule
+D7 Input Classifier  & 0.100 & 4.6 & M \\
+D9 Dual-LLM          & 0.100 & 4.6 & M \\
+D4 Re-execution      & 0.200 & 4.2 & M \\
+D3 Task Alignment    & 0.400 & 3.4 & M \\
+\bottomrule
+\end{tabular}%
+}
+\begin{flushleft}
+\scriptsize Defenses sorted by resilience. Six defenses achieve 0\% adaptive bypass; D10 (CIV) is the only multi-signal defense in this tier.
+\end{flushleft}
+\end{table}

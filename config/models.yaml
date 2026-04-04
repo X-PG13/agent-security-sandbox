@@ -18,56 +18,42 @@ models:
         input: 0.00015
         output: 0.0006
 
-    gpt-4:
-      name: "gpt-4"
-      provider: "openai"
-      max_tokens: 8192
-      temperature: 0.7
-      cost_per_1k_tokens:
-        input: 0.03
-        output: 0.06
-
-    gpt-3.5-turbo:
-      name: "gpt-3.5-turbo"
-      provider: "openai"
-      max_tokens: 4096
-      temperature: 0.7
-      cost_per_1k_tokens:
-        input: 0.0015
-        output: 0.002
-
   anthropic:
-    claude-3-opus:
-      name: "claude-3-opus-20240229"
+    claude-sonnet-4-5:
+      name: "claude-sonnet-4-5-20250929"
       provider: "anthropic"
-      max_tokens: 4096
-      temperature: 0.7
-      cost_per_1k_tokens:
-        input: 0.015
-        output: 0.075
-
-    claude-3-sonnet:
-      name: "claude-3-sonnet-20240229"
-      provider: "anthropic"
-      max_tokens: 4096
+      max_tokens: 8192
       temperature: 0.7
       cost_per_1k_tokens:
         input: 0.003
         output: 0.015
 
-    claude-3-haiku:
-      name: "claude-3-haiku-20240307"
+    claude-haiku-4-5:
+      name: "claude-haiku-4-5-20251001"
       provider: "anthropic"
-      max_tokens: 4096
+      max_tokens: 8192
       temperature: 0.7
       cost_per_1k_tokens:
-        input: 0.00025
-        output: 0.00125
+        input: 0.0008
+        output: 0.004
+
+    claude-opus-4:
+      name: "claude-opus-4-20250514"
+      provider: "anthropic"
+      max_tokens: 8192
+      temperature: 0.7
+      cost_per_1k_tokens:
+        input: 0.015
+        output: 0.075
 
   openai-compatible:
-    # OpenAI-compatible endpoints (vLLM, Ollama, LiteLLM, LocalAI, etc.)
+    # OpenAI-compatible endpoints (vLLM, Ollama, LiteLLM, LocalAI, gateways, etc.)
     # Set OPENAI_BASE_URL or pass base_url when creating the client.
     # An API key is optional for most local providers.
+    #
+    # Models used in our experiments via OpenAI-compatible proxy:
+    #   - deepseek-v3-1-250821  (DeepSeek V3.1)
+    #   - gemini-2.5-flash      (Google Gemini 2.5 Flash)
     default:
       name: "default"
       provider: "openai-compatible"
@@ -78,5 +64,5 @@ models:
 
 # Default model for experiments
 default:
-  model: "gpt-4o-mini"
+  model: "gpt-4o"
   provider: "openai"

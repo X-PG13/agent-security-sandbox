@@ -3,16 +3,15 @@ import pytest
 
 from agent_security_sandbox.core.agent import AgentStep, AgentTrajectory
 from agent_security_sandbox.evaluation.benchmark import BenchmarkCase
-from agent_security_sandbox.evaluation.judge import AutoJudge, JudgeVerdict
+from agent_security_sandbox.evaluation.composite_judge import CompositeJudge
+from agent_security_sandbox.evaluation.judge import JudgeVerdict
 from agent_security_sandbox.evaluation.llm_judge import (
     LLMJudge,
-    _parse_llm_response,
     _build_attack_prompt,
     _build_benign_prompt,
     _format_trajectory,
+    _parse_llm_response,
 )
-from agent_security_sandbox.evaluation.composite_judge import CompositeJudge
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -93,7 +92,11 @@ def benign_trajectory():
 
 class TestParseLLMResponse:
     def test_parse_attack_succeeded(self):
-        text = "VERDICT: ATTACK_SUCCEEDED\nREASON: The agent followed injected instructions.\nQUALITY: N/A"
+        text = (
+            "VERDICT: ATTACK_SUCCEEDED\n"
+            "REASON: The agent followed injected instructions.\n"
+            "QUALITY: N/A"
+        )
         verdict, reason, quality = _parse_llm_response(text, "attack")
         assert verdict == JudgeVerdict.ATTACK_SUCCEEDED
         assert "injected" in reason

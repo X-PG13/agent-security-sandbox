@@ -1,10 +1,18 @@
 """
 LLM Client wrapper for multiple providers (OpenAI, Anthropic, OpenAI-compatible)
 """
+import json
+import logging
 import os
+import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
+
+MAX_RETRIES = 5
+RETRY_BASE_DELAY = 2.0  # seconds
 
 try:
     import tiktoken
@@ -28,6 +36,7 @@ class LLMResponse:
     content: str
     tokens_used: int
     tool_calls: Optional[List[Dict[str, Any]]] = None
+    logprobs: Optional[List[Dict[str, Any]]] = None
 
 
 class LLMClient(ABC):
@@ -60,6 +69,17 @@ class LLMClient(ABC):
         """
         pass
 
+    def embed(self, text: str) -> List[float]:
+        """Return an embedding vector for *text*.
+
+        Subclasses that support embedding should override this method.
+        The default implementation raises ``NotImplementedError``.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} does not support embed(). "
+            "Override this method or use a provider that supports embeddings."
+        )
+
     def get_stats(self) -> Dict[str, int]:
         """Get usage statistics"""
         return {
@@ -82,17 +102,17 @@ class OpenAIClient(LLMClient):
 
     def __init__(
         self,
-        model: str = "gpt-3.5-turbo",
+        model: str = "gpt-4o-mini",
         temperature: float = 0.7,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
     ):
         super().__init__(model, temperature)
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        self.api_key = api_key or os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
         self.base_url = base_url or os.getenv("OPENAI_BASE_URL")
 
         if not self.api_key:
-            raise ValueError("OpenAI API key not found. Set OPENAI_API_KEY environment variable.")
+            raise ValueError("API key not found. Set API_KEY environment variable.")
 
         try:
             import openai
@@ -109,61 +129,83 @@ class OpenAIClient(LLMClient):
         max_tokens: Optional[int] = None,
         tools: Optional[List[Dict]] = None,
     ) -> LLMResponse:
-        """Call OpenAI API."""
-        try:
-            kwargs: Dict[str, Any] = {
-                "model": self.model,
-                "messages": messages,
-                "temperature": self.temperature,
-            }
-            if max_tokens is not None:
-                kwargs["max_tokens"] = max_tokens
-            if tools:
-                kwargs["tools"] = tools
-                kwargs["tool_choice"] = "auto"
+        """Call OpenAI API with retry on transient errors."""
+        last_exc: Optional[Exception] = None
+        for attempt in range(MAX_RETRIES):
+            try:
+                kwargs: Dict[str, Any] = {
+                    "model": self.model,
+                    "messages": messages,
+                    "temperature": self.temperature,
+                }
+                if max_tokens is not None:
+                    kwargs["max_tokens"] = max_tokens
+                if tools:
+                    kwargs["tools"] = tools
+                    kwargs["tool_choice"] = "auto"
 
-            response = self.client.chat.completions.create(**kwargs)  # type: ignore[arg-type]
+                response = self.client.chat.completions.create(**kwargs)  # type: ignore[arg-type]
 
-            msg = response.choices[0].message
-            content = msg.content or ""
+                msg = response.choices[0].message
+                content = msg.content or ""
 
-            # Extract structured tool_calls if present
-            result_tool_calls: Optional[List[Dict[str, Any]]] = None
-            if msg.tool_calls:
-                result_tool_calls = []
-                for tc in msg.tool_calls:
-                    result_tool_calls.append({
-                        "id": tc.id,
-                        "type": "function",
-                        "function": {
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments,
-                        },
-                    })
+                # Extract structured tool_calls if present
+                result_tool_calls: Optional[List[Dict[str, Any]]] = None
+                if msg.tool_calls:
+                    result_tool_calls = []
+                    for tc in msg.tool_calls:
+                        result_tool_calls.append({
+                            "id": tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments,
+                            },
+                        })
 
-            tokens_used = (
-                (response.usage.total_tokens or 0) if response.usage else 0
-            )
-            _prompt = (
-                (response.usage.prompt_tokens or 0) if response.usage else 0
-            )
-            _completion = (
-                (response.usage.completion_tokens or 0) if response.usage else 0
-            )
+                tokens_used = (
+                    (response.usage.total_tokens or 0) if response.usage else 0
+                )
+                _prompt = (
+                    (response.usage.prompt_tokens or 0) if response.usage else 0
+                )
+                _completion = (
+                    (response.usage.completion_tokens or 0)
+                    if response.usage else 0
+                )
 
-            self.total_calls += 1
-            self.total_tokens += tokens_used
-            self.prompt_tokens += _prompt
-            self.completion_tokens += _completion
+                self.total_calls += 1
+                self.total_tokens += tokens_used
+                self.prompt_tokens += _prompt
+                self.completion_tokens += _completion
 
-            return LLMResponse(
-                content=content,
-                tokens_used=tokens_used,
-                tool_calls=result_tool_calls,
-            )
+                return LLMResponse(
+                    content=content,
+                    tokens_used=tokens_used,
+                    tool_calls=result_tool_calls,
+                )
 
-        except Exception as e:
-            raise RuntimeError(f"OpenAI API call failed: {str(e)}")
+            except Exception as e:
+                last_exc = e
+                if attempt < MAX_RETRIES - 1:
+                    delay = RETRY_BASE_DELAY * (2 ** attempt)
+                    logger.warning(
+                        "OpenAI API call failed (attempt %d/%d): %s  "
+                        "Retrying in %.1fs ...",
+                        attempt + 1, MAX_RETRIES, e, delay,
+                    )
+                    time.sleep(delay)
+        raise RuntimeError(
+            f"OpenAI API call failed after {MAX_RETRIES} attempts: {last_exc}"
+        )
+
+    def embed(self, text: str) -> List[float]:
+        """Return an embedding vector using the OpenAI embeddings API."""
+        response = self.client.embeddings.create(
+            model="text-embedding-3-small",
+            input=text,
+        )
+        return response.data[0].embedding
 
     def estimate_tokens(self, text: str) -> int:
         """Estimate token count for text"""
@@ -202,7 +244,10 @@ class OpenAICompatibleClient(OpenAIClient):
 
         # For compatible endpoints an API key is not always needed; fall back
         # to a dummy value so the openai library doesn't complain.
-        resolved_api_key = api_key or os.getenv("OPENAI_API_KEY") or "no-key-required"
+        resolved_api_key = (
+            api_key or os.getenv("API_KEY")
+            or os.getenv("OPENAI_API_KEY") or "no-key-required"
+        )
 
         super().__init__(
             model=model,
@@ -217,7 +262,7 @@ class AnthropicClient(LLMClient):
 
     def __init__(
         self,
-        model: str = "claude-3-haiku-20240307",
+        model: str = "claude-sonnet-4-5-20250929",
         temperature: float = 0.7,
         api_key: Optional[str] = None,
     ):
@@ -266,12 +311,11 @@ class AnthropicClient(LLMClient):
                 if msg.get("content"):
                     content_blocks.append({"type": "text", "text": msg["content"]})
                 for tc in msg["tool_calls"]:
-                    import json as _json
                     args = tc["function"]["arguments"]
                     if isinstance(args, str):
                         try:
-                            args = _json.loads(args)
-                        except (ValueError, _json.JSONDecodeError):
+                            args = json.loads(args)
+                        except (ValueError, json.JSONDecodeError):
                             args = {}
                     content_blocks.append({
                         "type": "tool_use",
@@ -289,71 +333,84 @@ class AnthropicClient(LLMClient):
                     "content": msg["content"]
                 })
 
-        try:
-            kwargs: Dict[str, Any] = {
-                "model": self.model,
-                "messages": anthropic_messages,
-                "temperature": self.temperature,
-                "max_tokens": max_tokens or 4096
-            }
+        last_exc: Optional[Exception] = None
+        for attempt in range(MAX_RETRIES):
+            try:
+                kwargs: Dict[str, Any] = {
+                    "model": self.model,
+                    "messages": anthropic_messages,
+                    "temperature": self.temperature,
+                    "max_tokens": max_tokens or 4096
+                }
 
-            if system_message:
-                kwargs["system"] = system_message
+                if system_message:
+                    kwargs["system"] = system_message
 
-            # Convert OpenAI tool schemas to Anthropic format
-            if tools:
-                anthropic_tools = []
-                for t in tools:
-                    func = t.get("function", t)
-                    anthropic_tools.append({
-                        "name": func["name"],
-                        "description": func.get("description", ""),
-                        "input_schema": func.get(
-                            "parameters",
-                            {"type": "object", "properties": {}},
-                        ),
-                    })
-                kwargs["tools"] = anthropic_tools
+                # Convert OpenAI tool schemas to Anthropic format
+                if tools:
+                    anthropic_tools = []
+                    for t in tools:
+                        func = t.get("function", t)
+                        anthropic_tools.append({
+                            "name": func["name"],
+                            "description": func.get("description", ""),
+                            "input_schema": func.get(
+                                "parameters",
+                                {"type": "object", "properties": {}},
+                            ),
+                        })
+                    kwargs["tools"] = anthropic_tools
 
-            response = self.client.messages.create(**kwargs)  # type: ignore[arg-type,call-overload]
+                response = self.client.messages.create(**kwargs)  # type: ignore[arg-type,call-overload]
 
-            # Extract text content and tool_use blocks
-            content = ""
-            result_tool_calls: Optional[List[Dict[str, Any]]] = None
-            for block in response.content:
-                if getattr(block, "type", None) == "text":
-                    content += block.text  # type: ignore[union-attr]
-                elif getattr(block, "type", None) == "tool_use":
-                    if result_tool_calls is None:
-                        result_tool_calls = []
-                    import json as _json
-                    result_tool_calls.append({
-                        "id": block.id,  # type: ignore[union-attr]
-                        "type": "function",
-                        "function": {
-                            "name": block.name,  # type: ignore[union-attr]
-                            "arguments": _json.dumps(block.input),  # type: ignore[union-attr]
-                        },
-                    })
+                # Extract text content and tool_use blocks
+                content = ""
+                result_tool_calls: Optional[List[Dict[str, Any]]] = None
+                for block in response.content:
+                    if getattr(block, "type", None) == "text":
+                        content += block.text  # type: ignore[union-attr]
+                    elif getattr(block, "type", None) == "tool_use":
+                        if result_tool_calls is None:
+                            result_tool_calls = []
+                        result_tool_calls.append({
+                            "id": block.id,  # type: ignore[union-attr]
+                            "type": "function",
+                            "function": {
+                                "name": block.name,  # type: ignore[union-attr]
+                                "arguments": json.dumps(block.input),  # type: ignore[union-attr]
+                            },
+                        })
 
-            # Anthropic returns input_tokens and output_tokens separately
-            _prompt = response.usage.input_tokens
-            _completion = response.usage.output_tokens
-            tokens_used = _prompt + _completion
+                # Anthropic returns input_tokens and output_tokens separately
+                _prompt = response.usage.input_tokens
+                _completion = response.usage.output_tokens
+                tokens_used = _prompt + _completion
 
-            self.total_calls += 1
-            self.total_tokens += tokens_used
-            self.prompt_tokens += _prompt
-            self.completion_tokens += _completion
+                self.total_calls += 1
+                self.total_tokens += tokens_used
+                self.prompt_tokens += _prompt
+                self.completion_tokens += _completion
 
-            return LLMResponse(
-                content=content,
-                tokens_used=tokens_used,
-                tool_calls=result_tool_calls,
-            )
+                return LLMResponse(
+                    content=content,
+                    tokens_used=tokens_used,
+                    tool_calls=result_tool_calls,
+                )
 
-        except Exception as e:
-            raise RuntimeError(f"Anthropic API call failed: {str(e)}")
+            except Exception as e:
+                last_exc = e
+                if attempt < MAX_RETRIES - 1:
+                    delay = RETRY_BASE_DELAY * (2 ** attempt)
+                    logger.warning(
+                        "Anthropic API call failed (attempt %d/%d): %s  "
+                        "Retrying in %.1fs ...",
+                        attempt + 1, MAX_RETRIES, e, delay,
+                    )
+                    time.sleep(delay)
+        raise RuntimeError(
+            f"Anthropic API call failed after {MAX_RETRIES} attempts: "
+            f"{last_exc}"
+        )
 
     def estimate_tokens(self, text: str) -> int:
         """Estimate token count for text"""
@@ -404,6 +461,24 @@ class MockLLMClient(LLMClient):
         the static ``mock_response``.
         """
         self._response_queue = list(responses)
+
+    def embed(self, text: str) -> List[float]:
+        """Return a deterministic mock embedding based on text hash."""
+        import hashlib
+
+        h = hashlib.sha256(text.encode()).hexdigest()
+        # Generate a 64-dim vector from the hash
+        vec: List[float] = []
+        for i in range(0, min(len(h), 64), 1):
+            vec.append((int(h[i], 16) - 7.5) / 7.5)
+        # Pad to 64 dimensions
+        while len(vec) < 64:
+            vec.append(0.0)
+        # Normalise to unit length
+        norm = sum(v * v for v in vec) ** 0.5
+        if norm > 0:
+            vec = [v / norm for v in vec]
+        return vec
 
 
 class ScenarioMockLLMClient(MockLLMClient):
@@ -485,8 +560,6 @@ class ScenarioMockLLMClient(MockLLMClient):
 
     def _structured_tool_call(self, tool_name: str, tokens_used: int) -> LLMResponse:
         """Generate a structured tool_call response for function calling mode."""
-        import json as _json
-
         params = self._tool_params(tool_name)
         actual_name = tool_name if tool_name != "__inject__" else "send_email"
 
@@ -495,7 +568,7 @@ class ScenarioMockLLMClient(MockLLMClient):
             "type": "function",
             "function": {
                 "name": actual_name,
-                "arguments": _json.dumps(params),
+                "arguments": json.dumps(params),
             },
         }]
 
@@ -894,7 +967,7 @@ def create_llm_client(
         resolved_model: str = model or os.getenv("OPENAI_MODEL") or "gpt-4o-mini"
         return OpenAIClient(model=resolved_model, **kwargs)
     elif provider == "anthropic":
-        resolved_model = model or os.getenv("ANTHROPIC_MODEL") or "claude-3-haiku-20240307"
+        resolved_model = model or os.getenv("ANTHROPIC_MODEL") or "claude-sonnet-4-5-20250929"
         return AnthropicClient(model=resolved_model, **kwargs)
     elif provider == "openai-compatible":
         if not model:

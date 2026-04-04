@@ -13,7 +13,7 @@ Thank you for your interest in contributing! This document explains how to get s
 
 ```bash
 # Clone the repository
-git clone https://github.com/asb-team/agent-security-sandbox.git
+git clone https://github.com/X-PG13/agent-security-sandbox.git
 cd agent-security-sandbox
 
 # Create a virtual environment and install dev dependencies

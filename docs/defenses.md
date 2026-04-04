@@ -128,6 +128,27 @@ flag_tool_observations: false
 | D5 Sandwich | Prompt | Yes | No | No |
 | D6 Output Filter | Tool | No | Yes | No |
 | D7 Input Classifier | Pre-processing | Yes | Optional | No |
+| D8 Semantic Firewall | Tool | No | Yes | No |
+| D9 Dual-LLM | Tool | No | Yes | Yes |
+| D10 CIV (ours) | Multi | No | Yes | No |
+
+## D8: Semantic Firewall
+
+Uses embedding similarity between the user's goal and each proposed tool call to detect semantic drift. If a tool call's semantic similarity to the goal drops below a threshold, it is blocked. Effective at catching clearly off-topic actions but has a high false positive rate on legitimate multi-step tasks.
+
+## D9: Dual-LLM
+
+Employs a separate screening LLM to evaluate whether a proposed tool call is consistent with the user's goal. The screener receives the goal, the proposed action, and context, then makes an allow/block decision. Provides a second opinion but incurs additional latency and cost.
+
+## D10: Contextual Integrity Verification (CIV)
+
+Our novel multi-signal defense based on Nissenbaum's contextual integrity theory. CIV fuses three verification signals to determine whether each tool call is consistent with the user's original goal:
+
+1. **Entity Provenance**: Checks whether tool-call parameters reference entities from untrusted content (e.g., attacker email addresses) rather than the user's goal.
+2. **Tool Affinity Fingerprint**: Models goal-tool compatibility using keyword-based implication maps and tool co-occurrence statistics. Unexpected tools receive low scores.
+3. **Counterfactual Reasoning**: Estimates whether the tool call would still occur without the untrusted content, using heuristic checks on tool relevance, history consistency, and parameter naturalness.
+
+The three signals are weighted and fused into a combined integrity score. Tool calls below the threshold are blocked. The open-source codebase includes an improved version (CIV 2.0) with read/write risk stratification and embedding-based compatibility, pending real LLM evaluation.
 
 ## Composite Defenses
 

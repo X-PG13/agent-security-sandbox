@@ -1,0 +1,24 @@
+\begin{table*}[t]
+\centering
+\caption{Unified comparison of all 11 defenses on the 250-case core benchmark, averaged across 4 frontier models $\times$ 3 runs. ASR and BSR with 95\% Wilson CIs.}
+\label{tab:unified_results}
+\small
+\begin{tabular}{llccccc}
+\toprule
+ID & Defense & Avg ASR $\downarrow$ & 95\% CI & Avg BSR $\uparrow$ & 95\% CI & ASR Red. \\
+\midrule
+  D0 & Baseline & 0.413 & [0.391, 0.436] & 0.912 & [0.894, 0.927] & --- \\
+\midrule
+  D1 & Spotlighting & 0.020 & [0.015, 0.028] & 0.913 & [0.895, 0.928] & $-$95.1\% \\
+  D2 & Policy Gate & 0.307 & [0.286, 0.328] & 0.762 & [0.737, 0.786] & $-$25.7\% \\
+  D3 & Task Alignment & 0.406 & [0.384, 0.428] & 0.916 & [0.898, 0.931] & $-$1.8\% \\
+  D4 & Re-execution & 0.322 & [0.301, 0.343] & 0.779 & [0.754, 0.802] & $-$22.2\% \\
+  D5 & Sandwich & \textbf{0.010} & [0.007, 0.016] & \textbf{0.934} & [0.918, 0.947] & $-$97.5\% \\
+  D6 & Output Filter & 0.379 & [0.357, 0.401] & 0.902 & [0.883, 0.918] & $-$8.3\% \\
+  D7 & Input Classifier & 0.430 & [0.408, 0.453] & 0.922 & [0.905, 0.936] & $+$4.0\% \\
+  D8 & Semantic FW & 0.107 & [0.083, 0.102] & 0.383 & [0.356, 0.397] & $-$74.0\% \\
+  D9 & Dual-LLM & 0.263 & [0.212, 0.240] & 0.578 & [0.530, 0.571] & $-$36.5\% \\
+  D10 & CIV (ours) & 0.089 & [0.077, 0.103] & 0.821 & [0.798, 0.842] & $-$78.4\% \\
+\bottomrule
+\end{tabular}
+\end{table*}

@@ -24,7 +24,7 @@ import sys
 from collections import defaultdict
 from itertools import combinations
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _SCRIPT_DIR.parent
@@ -358,12 +358,18 @@ def main() -> None:
 
         asr_pt, asr_lo, asr_hi = wilson_score_interval(attack_succ, attack_total, args.confidence)
         bsr_pt, bsr_lo, bsr_hi = wilson_score_interval(benign_comp, benign_total, args.confidence)
-        fpr_pt, fpr_lo, fpr_hi = wilson_score_interval(benign_blocked, benign_total, args.confidence)
+        fpr_pt, fpr_lo, fpr_hi = wilson_score_interval(
+            benign_blocked, benign_total, args.confidence
+        )
 
         # Bootstrap CI across runs
         if len(runs) > 1:
-            _, asr_boot_lo, asr_boot_hi = bootstrap_ci(asr_values, args.bootstrap_samples, args.confidence)
-            _, bsr_boot_lo, bsr_boot_hi = bootstrap_ci(bsr_values, args.bootstrap_samples, args.confidence)
+            _, asr_boot_lo, asr_boot_hi = bootstrap_ci(
+                asr_values, args.bootstrap_samples, args.confidence
+            )
+            _, bsr_boot_lo, bsr_boot_hi = bootstrap_ci(
+                bsr_values, args.bootstrap_samples, args.confidence
+            )
         else:
             asr_boot_lo, asr_boot_hi = asr_lo, asr_hi
             bsr_boot_lo, bsr_boot_hi = bsr_lo, bsr_hi
@@ -494,7 +500,7 @@ def main() -> None:
               f"{s['bsr_mean']:>7.1%} {s['fpr_mean']:>7.1%}")
 
     if tau_results:
-        print(f"\nKendall's tau (cross-model ranking consistency):")
+        print("\nKendall's tau (cross-model ranking consistency):")
         for pair, tau in tau_results.items():
             print(f"  {pair}: {tau:.4f}")
 

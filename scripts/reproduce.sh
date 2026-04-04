@@ -98,25 +98,24 @@ echo ""
 # ---------------------------------------------------------------------------
 # Step 1: Run full evaluation (all defenses × benchmark)
 # ---------------------------------------------------------------------------
-DEFENSES="D0 D1 D2 D3 D4 D5"
+DEFENSES="D0 D1 D2 D3 D4 D5 D6 D7 D8 D9 D10"
 
 echo ">>> Step 1: Full defense evaluation"
 echo "    Defenses: $DEFENSES"
 echo ""
 
 for D in $DEFENSES; do
-    RESULT_FILE="$OUTPUT_DIR/eval_${D}.json"
     echo "  [$D] Running..."
     python experiments/run_full_evaluation.py \
         --provider "$PROVIDER" \
         $EXTRA_ARGS \
         --benchmark-dir "$BENCHMARK_DIR" \
-        --defense "$D" \
-        --output "$RESULT_FILE" \
+        --defenses "$D" \
+        --output-dir "$OUTPUT_DIR" \
         --runs "$RUNS" \
         $NO_FC \
         2>&1 | sed 's/^/    /'
-    echo "  [$D] Done -> $RESULT_FILE"
+    echo "  [$D] Done"
     echo ""
 done
 

@@ -1,27 +1,40 @@
 cff-version: 1.2.0
 message: "If you use this software in your research, please cite it as below."
 type: software
-title: "Agent Security Sandbox: A Benchmark for Evaluating Defenses Against Indirect Prompt Injection in LLM Agents"
-version: 0.2.0
-date-released: 2025-01-01
+title: "Agent Security Sandbox: Benchmarking Defenses Against Indirect Prompt Injection in Tool-Using LLM Agents"
+version: 1.0.0
+date-released: 2026-03-24
 license: MIT
-url: "https://github.com/zhaoyifan/agent-security-sandbox"
-repository-code: "https://github.com/zhaoyifan/agent-security-sandbox"
+url: "https://github.com/X-PG13/agent-security-sandbox"
+repository-code: "https://github.com/X-PG13/agent-security-sandbox"
 keywords:
   - prompt-injection
   - ai-safety
   - llm-agents
   - agent-security
   - benchmark
+  - defense-evaluation
+  - indirect-prompt-injection
 authors:
   - family-names: Zhao
     given-names: Yifan
+    affiliation: "Zhijiang College of Zhejiang University of Technology"
+    email: "2720174336@qq.com"
 abstract: >-
-  A modular research framework for systematically evaluating
-  the security of LLM-based agents against Indirect Prompt
-  Injection (IPI) attacks. Provides a benchmark suite of 235
-  test cases across 7 attack types, 5 pluggable defense
-  strategies, and automated evaluation with both rule-based
-  and LLM-based judges. Supports OpenAI, Anthropic, and
-  OpenAI-compatible API providers with function calling and
-  text ReAct modes.
+  A comprehensive benchmark framework for systematically evaluating
+  defenses against Indirect Prompt Injection (IPI) in tool-using LLM
+  agents. Provides 565 test cases across 6 attack types and 54 injection
+  techniques, implementations of 11 defense strategies (D0-D10), and
+  automated evaluation across 4 frontier LLMs with statistical analysis.
+  Includes Contextual Integrity Verification (CIV 2.0), a novel
+  multi-signal defense combining prompt framing with risk-stratified
+  tool gating.
+preferred-citation:
+  type: software
+  title: "Agent Security Sandbox: Benchmarking Defenses Against Indirect Prompt Injection in Tool-Using LLM Agents"
+  authors:
+    - family-names: Zhao
+      given-names: Yifan
+      affiliation: "Zhijiang College of Zhejiang University of Technology"
+  year: 2026
+  url: "https://github.com/X-PG13/agent-security-sandbox"

@@ -14,7 +14,11 @@ COPY config/ config/
 COPY data/ data/
 
 # Install the package
-RUN pip install --no-cache-dir -e ".[all]"
+RUN pip install --no-cache-dir ".[all]"
+
+# Create non-root user for security
+RUN useradd -m -s /bin/bash appuser
+USER appuser
 
 # Default command
 CMD ["asb", "--help"]

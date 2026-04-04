@@ -12,9 +12,9 @@ Our evaluation framework uses **mock tool environments** (simulated email, file 
 
 ### 2. Benchmark Coverage
 
-Although our benchmark includes 235 cases across 7 attack types, several important dimensions remain underexplored:
+Although our benchmark includes 250 cases across 8 attack types, several important dimensions remain underexplored:
 
-- **Attack diversity**: We focus on English-language injections. Cross-lingual attacks, encoding-based evasion (Base64, ROT13, Unicode homoglyphs), and multi-modal injection vectors (images, audio) are not covered.
+- **Attack diversity**: We focus on English-language injections. While v0.3.0 added encoding-based evasion techniques (Base64, ROT13, Unicode homoglyphs), cross-lingual attacks and multi-modal injection vectors (images, audio) are not yet covered.
 - **Adaptive attacks**: Our injections are *static*—they do not adapt based on the agent's responses or defense behavior. Sophisticated adversaries may craft *adaptive* injections that probe for defense weaknesses iteratively.
 - **Novel attack types**: The threat landscape evolves rapidly. Attack categories like indirect prompt injection via tool outputs, retrieval-augmented generation (RAG) poisoning, and multi-agent collusion are not yet modeled.
 - **Difficulty calibration**: Our difficulty ratings (1–3) are manually assigned and not empirically validated against actual attack success rates across models.
@@ -29,7 +29,7 @@ Although our benchmark includes 235 cases across 7 attack types, several importa
 
 - **Judge reliability**: Our LLM-based judge (when used) introduces a dependency on the judge model's own susceptibility to prompt injection and reasoning errors. While we mitigate this with a composite (rule + LLM) judge, the LLM judge component may have blind spots.
 - **Binary verdicts**: Our evaluation produces binary outcomes (attack succeeded/blocked, benign completed/blocked). This misses nuanced scenarios where an attack partially succeeds or a benign task is completed with degraded quality.
-- **Statistical power**: With 235 benchmark cases and the typical 3 runs per configuration, some subcategory analyses (e.g., per attack type × per defense) may have limited statistical power.
+- **Statistical power**: With 250 benchmark cases and the typical 3 runs per configuration, some subcategory analyses (e.g., per attack type × per defense) may have limited statistical power.
 
 ### 5. Model Access
 
