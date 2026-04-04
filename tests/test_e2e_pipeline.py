@@ -16,7 +16,6 @@ from agent_security_sandbox.defenses.d1_spotlighting import SpotlightingDefense
 from agent_security_sandbox.defenses.d5_sandwich import SandwichDefense
 from agent_security_sandbox.evaluation.benchmark import BenchmarkCase, BenchmarkSuite
 from agent_security_sandbox.evaluation.judge import AutoJudge, JudgeVerdict
-from agent_security_sandbox.evaluation.metrics import MetricsCalculator
 from agent_security_sandbox.evaluation.runner import ExperimentRunner
 from agent_security_sandbox.tools.registry import ToolRegistry
 

@@ -239,7 +239,7 @@ class InterAnnotatorAgreement:
         n_pairs_total = n_total * (n_total - 1) / 2
         d_e_norm = d_e / n_pairs_total if n_pairs_total > 0 else 0
 
-        n_obs_pairs = 0
+        n_obs_pairs: float = 0
         for case_id in case_ids:
             m = sum(1 for a in annotator_ids if a in matrix[case_id])
             n_obs_pairs += m * (m - 1) / 2
