@@ -1,0 +1,27 @@
+\section{Introduction}
+\label{sec:intro}
+
+LLM-based agents that autonomously invoke tools---reading emails, querying databases, calling APIs---represent a powerful but fragile paradigm.
+When such agents process \emph{untrusted} external content (e.g., an email body, a web page, a database record), an adversary can embed \emph{indirect prompt injections} (IPI) that redirect the agent away from its user-assigned goal \citep{greshake2023youve,zhan2024injecagent}.
+Unlike direct prompt injection, the user never sees or endorses the adversarial instruction; it arrives silently through the data channel.
+
+A growing body of work has proposed defenses against IPI, ranging from prompt-level strategies \citep{hines2024defending,yi2023benchmarking} to tool-gating mechanisms \citep{xiang2024melon} and content-level filtering.
+However, the current evaluation landscape is fragmented.
+Existing benchmarks such as InjecAgent \citep{zhan2024injecagent} focus on attack diversity but evaluate only 1--2 defenses; AgentDojo \citep{debenedetti2024agentdojo} provides a dynamic environment but includes only 2 built-in defenses.
+No existing benchmark offers:
+\begin{enumerate}
+    \item A \emph{broad defense taxonomy} spanning prompt-level, tool-gating, content-level, and multi-signal approaches;
+    \item \emph{Controlled comparison} of all defenses under identical conditions across multiple models;
+    \item \emph{Composition and ablation} experiments to understand how defenses interact and which components drive effectiveness.
+\end{enumerate}
+
+\paragraph{Contributions.}
+We introduce the \textbf{Agent Security Sandbox} (\asb{}), a comprehensive benchmark framework that addresses these gaps.
+Our contributions are:
+\begin{enumerate}
+    \item \textbf{\asb{} Benchmark:} A framework comprising 565 test cases (352 attack, 213 benign) across 6 attack types, 54 injection techniques, 8 injection locations, and 11 tools, with automated evaluation, statistical analysis, and reproduction scripts (\S\ref{sec:framework}).
+    \item \textbf{Systematic Evaluation:} The first controlled comparison of 11 defense strategies across 4 frontier LLMs with 132 evaluation runs, including ablation studies, composition analysis, per-attack-type breakdowns, and adaptive attack resilience testing (\S\ref{sec:results}--\S\ref{sec:analysis}).
+    \item \textbf{Contextual Integrity Verification (\civ{}):} A novel multi-signal defense that applies risk-stratified tool gating informed by contextual integrity theory \citep{nissenbaum2004privacy}, demonstrating that information-flow analysis provides a complementary defense mechanism (\S\ref{sec:civ}).
+    \item \textbf{Key Findings:} Prompt-level defenses outperform complex tool-gating by amplifying the model's alignment signal; model robustness varies 4--5$\times$ across families; defense composition is additive but not super-additive; input sanitization is counterproductive (\S\ref{sec:d7_analysis}); multi-step attacks are hardest (71.9\% baseline ASR).
+    \item \textbf{Open-Source Release:} All code, data, and reproduction scripts are publicly available.
+\end{enumerate}

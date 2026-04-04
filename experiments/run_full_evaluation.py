@@ -30,27 +30,35 @@ import time
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _SCRIPT_DIR.parent
+
+# Load .env from project root so API_KEY is available
+from dotenv import load_dotenv  # noqa: E402
+load_dotenv(_PROJECT_ROOT / ".env", override=True)
+
 for _p in (_PROJECT_ROOT, _PROJECT_ROOT / "src"):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from agent_security_sandbox.core.llm_client import create_llm_client
-from agent_security_sandbox.tools.registry import ToolRegistry
-from agent_security_sandbox.defenses.registry import create_defense
-from agent_security_sandbox.evaluation.benchmark import BenchmarkSuite
-from agent_security_sandbox.evaluation.runner import ExperimentRunner
+from agent_security_sandbox.core.llm_client import create_llm_client  # noqa: E402
+from agent_security_sandbox.defenses.registry import create_defense  # noqa: E402
+from agent_security_sandbox.evaluation.benchmark import BenchmarkSuite  # noqa: E402
+from agent_security_sandbox.evaluation.runner import ExperimentRunner  # noqa: E402
+from agent_security_sandbox.tools.registry import ToolRegistry  # noqa: E402
 
-ALL_DEFENSES = ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7"]
+ALL_DEFENSES = ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"]
 
 # Model name -> provider mapping
 MODEL_PROVIDERS = {
     "gpt-4o": "openai-compatible",
     "gpt-4o-mini": "openai-compatible",
     "claude-3-5-sonnet": "openai-compatible",
+    "claude-sonnet-4-5-20250929": "openai-compatible",
+    "deepseek-v3-1-250821": "openai-compatible",
+    "gemini-2.5-flash": "openai-compatible",
     "llama-3.1-70b": "openai-compatible",
     "qwen-2.5-72b": "openai-compatible",
     "mock": "mock",
@@ -176,9 +184,15 @@ def _run_single(
         use_function_calling=not args.no_function_calling,
     )
 
+    def _progress(idx: int, total: int, case) -> None:
+        if (idx + 1) % 10 == 0 or idx == 0:
+            elapsed_so_far = time.time() - start_time
+            print(f"    case {idx + 1}/{total}  ({elapsed_so_far:.0f}s elapsed)",
+                  flush=True)
+
     start_time = time.time()
     try:
-        result = runner.run_suite(suite)
+        result = runner.run_suite(suite, progress_callback=_progress)
     except Exception as exc:
         print(f"  [ERROR] Evaluation failed: {exc}")
         return None
@@ -214,7 +228,10 @@ def main() -> None:
     # Load benchmark suite
     suite = BenchmarkSuite.load_from_directory(args.benchmark_dir)
     print(f"Benchmark: {args.benchmark_dir}")
-    print(f"  {len(suite)} cases ({len(suite.attack_cases)} attack, {len(suite.benign_cases)} benign)")
+    print(
+        f"  {len(suite)} cases"
+        f" ({len(suite.attack_cases)} attack, {len(suite.benign_cases)} benign)"
+    )
     print(f"Models: {args.models}")
     print(f"Defenses: {args.defenses}")
     print(f"Runs: {args.runs}")
@@ -245,7 +262,10 @@ def main() -> None:
     print(f"\nCombined results saved to {combined_path}")
 
     # Print summary table
-    print(f"\n{'Model':<25} {'Defense':<8} {'Run':>4} {'ASR':>8} {'BSR':>8} {'FPR':>8} {'Tokens':>10}")
+    print(
+        f"\n{'Model':<25} {'Defense':<8} {'Run':>4}"
+        f" {'ASR':>8} {'BSR':>8} {'FPR':>8} {'Tokens':>10}"
+    )
     print("-" * 75)
     for key, data in all_results.items():
         meta = data.get("_meta", {})

@@ -1,0 +1,30 @@
+# Configuration for real environment tools.
+#
+# WARNING: These tools interact with real services. Always use
+# dry_run: true for testing and sandbox accounts for validation.
+
+gmail:
+  enabled: false
+  dry_run: true
+  credentials_path: "config/google_credentials.json"
+  sandbox_account: "asb-test@gmail.com"
+  rate_limit_seconds: 2.0
+
+google_calendar:
+  enabled: false
+  dry_run: true
+  credentials_path: "config/google_credentials.json"
+  sandbox_account: "asb-test@gmail.com"
+  calendar_id: "primary"
+  rate_limit_seconds: 2.0
+
+# Safety settings
+safety:
+  # Maximum number of real API calls per experiment run.
+  max_real_calls: 50
+  # Require explicit confirmation before real execution.
+  require_confirmation: true
+  # Allowed recipient domains for email sending.
+  allowed_email_domains:
+    - "asb-test.com"
+    - "sandbox.example.com"

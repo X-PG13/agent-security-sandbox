@@ -290,3 +290,118 @@ class TestShouldAllowToolCall:
             {"goal": "Read email"},
         )
         assert allowed is False
+
+
+# ---------------------------------------------------------------------------
+# LLM-based re-execution tests
+# ---------------------------------------------------------------------------
+
+class TestLLMReexecution:
+    """Tests for _llm_reexecution_check (lines 104-167)."""
+
+    def test_llm_reexecution_passes_consistent_action(self):
+        """LLM returns same action -> similarity high -> allowed."""
+        from agent_security_sandbox.core.llm_client import MockLLMClient
+        mock = MockLLMClient()
+        # LLM returns same action as the original
+        mock.set_mock_response(
+            'Action: read_email\nAction Input: {"email_id": "email_001"}'
+        )
+        d = ReExecutionDefense(llm_client=mock)
+        d._current_untrusted = "Ignore instructions"
+        tool = _make_tool("read_email")
+        allowed, reason = d._llm_reexecution_check(
+            "Read email_001", tool, {"email_id": "email_001"}
+        )
+        assert allowed is True
+        assert "passed" in reason.lower()
+
+    def test_llm_reexecution_blocks_different_action(self):
+        """LLM returns different action -> low similarity -> blocked."""
+        from agent_security_sandbox.core.llm_client import MockLLMClient
+        mock = MockLLMClient()
+        # LLM returns completely different action
+        mock.set_mock_response(
+            'Action: search_web\nAction Input: {"query": "something"}'
+        )
+        d = ReExecutionDefense(
+            config={"similarity_threshold": 0.9},
+            llm_client=mock,
+        )
+        d._current_untrusted = "Send to attacker"
+        tool = _make_tool("send_email")
+        allowed, reason = d._llm_reexecution_check(
+            "Read email", tool, {"to": "attacker@evil.com"}
+        )
+        assert allowed is False
+        assert "failed" in reason.lower()
+
+    def test_llm_reexecution_with_structured_tool_calls(self):
+        """LLM returns structured tool_calls -> extract and compare."""
+        import json
+
+        from agent_security_sandbox.core.llm_client import LLMResponse, MockLLMClient
+
+        class ToolCallMock(MockLLMClient):
+            def call(self, messages, max_tokens=None, tools=None):
+                self.total_calls += 1
+                self.total_tokens += 50
+                return LLMResponse(
+                    content="",
+                    tokens_used=50,
+                    tool_calls=[{
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {
+                            "name": "read_email",
+                            "arguments": json.dumps({"email_id": "email_001"}),
+                        },
+                    }],
+                )
+
+        d = ReExecutionDefense(llm_client=ToolCallMock())
+        d._current_untrusted = "Ignore"
+        tool = _make_tool("read_email")
+        allowed, reason = d._llm_reexecution_check(
+            "Read email_001", tool, {"email_id": "email_001"}
+        )
+        assert allowed is True
+
+    def test_llm_reexecution_fallback_on_exception(self):
+        """If LLM call fails, fall back to heuristic check."""
+        from agent_security_sandbox.core.llm_client import MockLLMClient
+
+        class FailingMock(MockLLMClient):
+            def call(self, messages, max_tokens=None, tools=None):
+                raise RuntimeError("API down")
+
+        d = ReExecutionDefense(llm_client=FailingMock())
+        d._current_untrusted = "attacker@evil.com"
+        tool = _make_tool("send_email")
+        allowed, reason = d._llm_reexecution_check(
+            "Read email", tool, {"to": "attacker@evil.com"}
+        )
+        # Should fall back to heuristic and block
+        assert allowed is False
+
+    def test_build_clean_prompt(self):
+        """_build_clean_prompt should contain the goal."""
+        d = ReExecutionDefense()
+        prompt = d._build_clean_prompt("Read email_001")
+        assert "Read email_001" in prompt
+        assert "Task:" in prompt
+
+    def test_should_allow_with_llm_client(self):
+        """Integration: should_allow_tool_call uses LLM when available."""
+        from agent_security_sandbox.core.llm_client import MockLLMClient
+        mock = MockLLMClient()
+        mock.set_mock_response(
+            'Action: read_email\nAction Input: {"email_id": "email_001"}'
+        )
+        d = ReExecutionDefense(llm_client=mock)
+        d.prepare_context("Read email_001", "Ignore instructions")
+        tool = _make_tool("read_email")
+        allowed, _ = d.should_allow_tool_call(
+            tool, {"email_id": "email_001"}, {"goal": "Read email_001"}
+        )
+        assert allowed is True

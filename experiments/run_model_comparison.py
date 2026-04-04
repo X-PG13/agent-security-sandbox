@@ -22,11 +22,11 @@ for _p in (_PROJECT_ROOT, _PROJECT_ROOT / "src"):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from agent_security_sandbox.core.llm_client import create_llm_client
-from agent_security_sandbox.tools.registry import ToolRegistry
-from agent_security_sandbox.defenses.registry import create_defense
-from agent_security_sandbox.evaluation.benchmark import BenchmarkSuite
-from agent_security_sandbox.evaluation.runner import ExperimentRunner
+from agent_security_sandbox.core.llm_client import create_llm_client  # noqa: E402
+from agent_security_sandbox.defenses.registry import create_defense  # noqa: E402
+from agent_security_sandbox.evaluation.benchmark import BenchmarkSuite  # noqa: E402
+from agent_security_sandbox.evaluation.runner import ExperimentRunner  # noqa: E402
+from agent_security_sandbox.tools.registry import ToolRegistry  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:

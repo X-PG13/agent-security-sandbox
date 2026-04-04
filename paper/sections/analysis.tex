@@ -1,0 +1,78 @@
+\section{Analysis}
+\label{sec:analysis}
+
+\subsection{Defense Composition}
+\label{sec:composition}
+
+We evaluate whether combining defenses yields super-additive security improvements.
+Under an independence assumption, the expected \asr{} of a composition is $\text{ASR}_A \times \text{ASR}_B$; actual \asr{} below this value indicates super-additivity.
+
+\input{tables/composition_results}
+
+Table~\ref{tab:composition} reports results for 9 targeted defense combinations on GPT-4o.
+
+\paragraph{Finding 6: Composition Is Additive, Not Super-Additive.}
+Every pair combination (D1+D10, D5+D10, D5+D1) reduces \asr{} to 0.3\%---only 1 attack out of 352 bypasses the combined defense.
+However, the actual \asr{} values are at or slightly above the independence-predicted values, indicating the compositions are additive rather than super-additive: the single attack that bypasses one defense tends to also bypass the other.
+
+\paragraph{Diminishing Returns.}
+The triple combination D5+D1+D10 achieves the same \asr{} (0.3\%) as D5+D10, confirming that once \asr{} reaches the single-case floor, additional defenses cannot further improve security.
+This suggests that \textbf{defense stacking beyond two layers has limited value} when prompt-level defenses are already applied.
+
+\subsection{Why Input Sanitization Backfires}
+\label{sec:d7_analysis}
+
+\paragraph{Finding 7: Sanitization Removes Adversarial Cues the Model Uses for Defense.}
+\defense{D7} (Input Classifier) is the only defense that \emph{increases} \asr{} relative to the baseline (+4.0\%), and this effect is consistent across GPT-4o (+5.0\%), DeepSeek (+0.8\%), and Gemini (+4.9\%).
+The result is counterintuitive: removing explicit injection patterns from untrusted content should make attacks less effective, yet the opposite holds.
+
+We hypothesize a \emph{contextual cue removal} mechanism: explicit injection markers (e.g., ``Ignore previous instructions'', ``[SYSTEM UPDATE]'') serve dual roles.
+From the attacker's perspective, they direct the model to follow new instructions.
+But from the model's perspective, they also function as anomaly signals---unusual artifacts that a well-aligned model has been trained to be suspicious of.
+D7 removes these markers, producing sanitized content that is grammatically and semantically indistinguishable from legitimate task content.
+The model then processes the residual attack payload---the harmful instruction that survives sanitization---without the suspicious framing, and executes it.
+
+This finding has an important practical implication: \textbf{surface-level sanitization is not only ineffective but actively harmful}, as it degrades the model's ability to self-detect injection attempts.
+Defenses that \emph{mark} untrusted content as suspicious (D1 Spotlighting, D5 Sandwich) rather than sanitize it achieve dramatically better results, consistent with this hypothesis.
+
+\subsection{Why Prompt-Level Defenses Dominate}
+\label{sec:why_prompt_level}
+
+\paragraph{Finding 8: Defense Mechanism Determines Failure Mode.}
+The performance gap reflects a fundamental difference in \emph{where} each mechanism intervenes.
+Prompt-level defenses operate at the \emph{interpretation layer}: by marking untrusted content (D1) or re-anchoring the goal (D5), they \emph{leverage} the model's own alignment to reject injections.
+Tool-gating defenses operate at the \emph{action layer}: they intercept tool calls post-hoc using structural signals, but the model has already been influenced by the injection.
+This asymmetry yields a design principle: \textbf{defenses that amplify the model's alignment signal outperform those that substitute for it}.
+
+\subsection{Per-Attack-Type Analysis}
+\label{sec:attack_type}
+
+Table~\ref{tab:attack_type_matrix} (Appendix) presents a full breakdown of \asr{} by attack type and defense.
+
+\paragraph{Finding 9: Tool-Gating Defenses Fail Against Social Engineering; Multi-Step Attacks Are Hardest Overall.}
+\emph{Social engineering} attacks (authority appeals, impersonation) are particularly resistant to tool-gating defenses: D2, D3, D4, D6, and D9 all achieve $\geq$33\% ASR on this category, close to the 35.8\% baseline.
+These attacks minimize behavioral anomalies---no suspicious entities in parameters, no unusual tool sequences---so provenance and plan-deviation signals provide little signal.
+However, prompt-level defenses remain effective: D1 achieves 1.5\% and D5 achieves 0.0\% on social engineering.
+\emph{Multi-step} attacks (baseline 71.9\%) are the hardest category overall: conventional tool-gating defenses (D2, D3, D4) barely reduce multi-step ASR ($\geq$68.5\%), and D9 still leaves 52.0\% ASR. D8 achieves 18.8\% but at the cost of 75.3\% \fpr{}.
+The exception is \civ{} (D10), which reduces multi-step attacks to 1.5\% via its plan deviation signal, which specifically penalizes tool sequences that deviate from the inferred task plan.
+
+\paragraph{Attack-Specific Strengths.}
+\civ{}'s provenance signal is particularly effective against \emph{data exfiltration} (2.7\% ASR), which necessarily introduces attacker-controlled entities not present in the user's goal.
+D5 achieves near-zero ASR uniformly across attack types, with multi-step attacks (0.0\%) and goal hijacking (0.0\%) fully blocked.
+D8 (Semantic Firewall) shows strength on exfiltration (7.5\%) and privilege escalation (9.3\%) but struggles on goal hijacking (13.8\%), which does not require anomalous tool parameters.
+
+\subsection{The Security-Utility Trade-off}
+\label{sec:tradeoff}
+
+Figure~\ref{fig:pareto} (Appendix) visualizes the security--utility trade-off.
+\textbf{Prompt-level defenses} (D5, D1) occupy the Pareto-optimal region: $>$95\% \asr{} reduction with $<$9\% \fpr{}.
+\textbf{Tool-gating defenses} trade significant utility ($>$22\% \fpr{}) for moderate security gains.
+\civ{} moves closer to the prompt-level frontier but its 17.9\% \fpr{} remains higher than D5's 6.6\%.
+\textbf{Prompt-level defenses should be the default choice} for deployment, with tool-gating as a complementary layer for high-security applications.
+
+\subsection{Cross-Model Consistency and Statistical Significance}
+
+Kendall's $\tau$ rank correlation for defense effectiveness ranges from 0.64 to 0.93 across model pairs, indicating that defense rankings generalize across models.
+McNemar's test identifies 235/368 pairwise comparisons as significant ($p < 0.05$, Bonferroni-corrected).
+D5 vs.\ D1 is \emph{not} significant despite different mechanisms, while D10 vs.\ D0 is highly significant ($p < 0.001$) across all models.
+Full results in Appendix~\ref{app:mcnemar}.

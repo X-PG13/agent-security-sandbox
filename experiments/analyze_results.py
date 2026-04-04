@@ -3,7 +3,9 @@
 Analyze experiment results and generate comparison charts.
 
 Usage:
-    python experiments/analyze_results.py --results-dir experiments/results --output-dir experiments/results/figures
+    python experiments/analyze_results.py \
+        --results-dir experiments/results \
+        --output-dir experiments/results/figures
 """
 from __future__ import annotations
 
@@ -90,7 +92,7 @@ def plot_asr_by_defense(metrics: List[Dict], output_dir: Path) -> None:
     fig.tight_layout()
     fig.savefig(output_dir / "asr_by_defense.png", dpi=150)
     plt.close(fig)
-    print(f"  Saved asr_by_defense.png")
+    print("  Saved asr_by_defense.png")
 
 
 def plot_bsr_by_defense(metrics: List[Dict], output_dir: Path) -> None:
@@ -109,7 +111,7 @@ def plot_bsr_by_defense(metrics: List[Dict], output_dir: Path) -> None:
     fig.tight_layout()
     fig.savefig(output_dir / "bsr_by_defense.png", dpi=150)
     plt.close(fig)
-    print(f"  Saved bsr_by_defense.png")
+    print("  Saved bsr_by_defense.png")
 
 
 def plot_grouped_comparison(metrics: List[Dict], output_dir: Path) -> None:
@@ -135,7 +137,7 @@ def plot_grouped_comparison(metrics: List[Dict], output_dir: Path) -> None:
     fig.tight_layout()
     fig.savefig(output_dir / "grouped_comparison.png", dpi=150)
     plt.close(fig)
-    print(f"  Saved grouped_comparison.png")
+    print("  Saved grouped_comparison.png")
 
 
 def main() -> None:

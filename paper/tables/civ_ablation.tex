@@ -1,0 +1,35 @@
+\begin{table}[t]
+\centering
+\small
+\caption{CIV ablation study on the 250-case core benchmark (GPT-4o, single run). Top: CIV~v1 component ablation. Bottom: CIV~v2 (main table) incorporating ablation insights. $\Delta$ASR relative to v1-full.}
+\label{tab:civ_ablation}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{l rr rr}
+\toprule
+Config & ASR$\downarrow$ & BSR$\uparrow$ & $\Delta$ASR & $\Delta$BSR \\
+\midrule
+\textbf{full}                 & 0.123 & 0.853 & ---        & ---      \\
+\midrule
+\multicolumn{5}{l}{\textit{Leave-one-out}} \\
+no\_provenance                & 0.265 & 0.905 & +115\%     & +6\%     \\
+no\_fingerprint               & 0.116 & 0.747 & $-$6\%     & $-$12\%  \\
+no\_counterfactual            & 0.058 & 0.821 & $-$53\%    & $-$4\%   \\
+\midrule
+\multicolumn{5}{l}{\textit{Single-signal}} \\
+provenance\_only              & 0.097 & 0.832 & $-$21\%    & $-$2\%   \\
+fingerprint\_only             & 0.361 & 0.821 & +193\%     & $-$4\%   \\
+counterfactual\_only          & 0.226 & 0.811 & +84\%      & $-$5\%   \\
+\midrule
+\multicolumn{5}{l}{\textit{CIV v2: incorporating ablation insights (main table)}} \\
+\textbf{v2} (embed + plan-dev)   & \textbf{0.089} & 0.821 & $-$28\%    & $-$4\%   \\
+\bottomrule
+\end{tabular}%
+}
+\begin{flushleft}
+\scriptsize
+\textbf{Key findings}: (1)~Provenance is the most critical signal (+115\% ASR when removed); single-signal provenance (9.7\% ASR) nearly matches v1-full.
+(2)~Counterfactual reasoning is net-harmful ($-$53\% ASR when removed), motivating its replacement in v2.
+(3)~Fingerprint (tool affinity) is critical for utility ($-$12\% BSR when removed), preserved in v2 via embedding-based compatibility.
+(4)~CIV~v2 replaces counterfactual with plan deviation detection and upgrades fingerprint to embedding similarity, achieving 8.9\% ASR ($-$28\% vs.\ v1) while maintaining comparable BSR.
+\end{flushleft}
+\end{table}

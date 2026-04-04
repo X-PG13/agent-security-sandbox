@@ -1,0 +1,24 @@
+\begin{table*}[t]
+\centering
+\caption{Per-model ASR on the 250-case core benchmark (3-run average). All 11 defenses compared on the same case set.}
+\label{tab:per_model_unified}
+\small
+\begin{tabular}{lccccc}
+\toprule
+Defense & GPT-4o & Claude 4.5 & DeepSeek V3.1 & Gemini 2.5 & Avg \\
+\midrule
+  Baseline & 0.492 & 0.116 & 0.508 & 0.538 & 0.413 \\
+\midrule
+  Spotlighting & 0.006 & 0.006 & 0.022 & 0.047 & 0.020 \\
+  Policy Gate & 0.372 & 0.084 & 0.406 & 0.366 & 0.307 \\
+  Task Alignment & 0.475 & 0.142 & 0.516 & 0.490 & 0.406 \\
+  Re-execution & 0.363 & 0.099 & 0.422 & 0.402 & 0.322 \\
+  Sandwich & 0.006 & 0.013 & 0.013 & 0.009 & 0.010 \\
+  Output Filter & 0.434 & 0.118 & 0.499 & 0.465 & 0.379 \\
+  Input Classifier & 0.477 & 0.166 & 0.551 & 0.527 & 0.430 \\
+  Semantic FW & 0.095 & 0.005 & 0.128 & 0.202 & 0.107 \\
+  Dual-LLM & 0.320 & 0.007 & 0.234 & 0.490 & 0.263 \\
+  CIV (ours) & 0.101 & 0.015 & 0.116 & 0.125 & 0.089 \\
+\bottomrule
+\end{tabular}
+\end{table*}

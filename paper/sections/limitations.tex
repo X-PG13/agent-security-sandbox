@@ -1,0 +1,26 @@
+\section{Limitations and Ethical Considerations}
+\label{sec:limitations}
+
+\paragraph{Simulated Environment.}
+\asb{} uses mock tools rather than live APIs, enabling reproducibility but missing real-world attack surfaces.
+On the full 565-case benchmark, BSR drops across all defenses---including D0 baseline (89.5\%$\to$53.1\%)---due to mock-environment limitations on complex multi-tool cases (Appendix~\ref{sec:extended_results}).
+
+\paragraph{Benchmark Scope.}
+Our 565 cases cover 6 attack types and 54 injection techniques, but may not represent the full distribution of real-world injections.
+Data exfiltration is overrepresented (53.4\%), potentially biasing aggregate metrics.
+Cross-benchmark evaluation (\S\ref{sec:cross_benchmark}) revealed that attack success judgments are tightly coupled to each benchmark's evaluation protocol and cannot be transferred via format conversion---standardized cross-benchmark protocols remain an open challenge.
+
+\paragraph{Adaptive Attack Scope.}
+Our adaptive evaluation uses a single attacker model (GPT-4o) with 5 iterations; bypass rates measure resistance to feedback-guided optimization rather than absolute robustness (\S\ref{sec:adaptive}).
+
+\paragraph{CIV Limitations.}
+All main-table results use CIV~v2 (v1's counterfactual signal was net-harmful).
+CIV's provenance signal faces a fundamental tension: legitimate cross-tool data flows and attacker-driven exfiltration can be structurally indistinguishable without task-level intent modeling.
+
+\paragraph{D7 Sanitization Finding.}
+Our finding that D7 increases ASR by 4\% should be interpreted as benchmark-specific: our payloads use explicit injection markers that the sanitizer removes, but which also serve as anomaly cues for the model's self-defense.
+Marker-free attacks may yield different results.
+
+\paragraph{Ethical Considerations.}
+\asb{} is designed to improve agent security.
+We release attack payloads for reproducibility using synthetic data with no real user information, and follow responsible disclosure practices.

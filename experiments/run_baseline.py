@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -36,12 +35,12 @@ for _p in (_PROJECT_ROOT, _SRC_DIR):
     if _p_str not in sys.path:
         sys.path.insert(0, _p_str)
 
-from agent_security_sandbox.core.llm_client import create_llm_client
-from agent_security_sandbox.tools.registry import ToolRegistry
-from agent_security_sandbox.defenses.registry import create_defense
-from agent_security_sandbox.evaluation.benchmark import BenchmarkSuite
-from agent_security_sandbox.evaluation.runner import ExperimentRunner
-from agent_security_sandbox.evaluation.reporter import Reporter
+from agent_security_sandbox.core.llm_client import create_llm_client  # noqa: E402
+from agent_security_sandbox.defenses.registry import create_defense  # noqa: E402
+from agent_security_sandbox.evaluation.benchmark import BenchmarkSuite  # noqa: E402
+from agent_security_sandbox.evaluation.reporter import Reporter  # noqa: E402
+from agent_security_sandbox.evaluation.runner import ExperimentRunner  # noqa: E402
+from agent_security_sandbox.tools.registry import ToolRegistry  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Defense identifiers to evaluate
@@ -264,7 +263,7 @@ def main() -> None:
         print(f"{'='*60}")
 
         # Create defense strategy
-        defense = create_defense(defense_id)
+        defense = create_defense(defense_id, llm_client=llm_client)
 
         # Build runner -- tool_registry_factory produces a fresh ToolRegistry
         # for each case so that per-case tool state does not leak.
@@ -304,10 +303,10 @@ def main() -> None:
     try:
         reporter = Reporter()
         reporter_output = output_dir / "baseline_reporter_output.md"
-        reporter.generate(all_results, str(reporter_output))
+        content = reporter.generate_markdown([])
+        Reporter.save_report(content, str(reporter_output))
         print(f"Reporter output saved to {reporter_output}")
     except Exception:
-        # Reporter may not be fully implemented yet -- that is fine.
         pass
 
 

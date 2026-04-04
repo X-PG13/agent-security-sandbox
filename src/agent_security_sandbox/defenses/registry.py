@@ -27,6 +27,9 @@ from .d4_reexecution import ReExecutionDefense
 from .d5_sandwich import SandwichDefense
 from .d6_output_filter import OutputFilterDefense
 from .d7_input_classifier import InputClassifierDefense
+from .d8_semantic_firewall import SemanticFirewallDefense
+from .d9_dual_llm import DualLLMDefense
+from .d10_civ import ContextualIntegrityDefense
 
 # Map defense IDs to their implementation classes.
 _DEFENSE_CLASSES: Dict[str, type] = {
@@ -38,6 +41,9 @@ _DEFENSE_CLASSES: Dict[str, type] = {
     "D5": SandwichDefense,
     "D6": OutputFilterDefense,
     "D7": InputClassifierDefense,
+    "D8": SemanticFirewallDefense,
+    "D9": DualLLMDefense,
+    "D10": ContextualIntegrityDefense,
 }
 
 
@@ -77,8 +83,8 @@ def create_defense(
             f"Available defenses: {available}"
         )
 
-    # D3 and D4 accept an optional llm_client argument.
-    if defense_id_upper in ("D3", "D4"):
+    # D3, D4, D8, D9, D10 accept an optional llm_client argument.
+    if defense_id_upper in ("D3", "D4", "D8", "D9", "D10"):
         return cls(config=config, llm_client=llm_client)
 
     return cls(config=config)

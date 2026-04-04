@@ -10,7 +10,7 @@ cp .env.example .env
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `OPENAI_API_KEY` | OpenAI API key | Required for openai provider |
+| `API_KEY` | API key (supports OpenAI and compatible providers) | Required for openai provider |
 | `OPENAI_BASE_URL` | Custom API endpoint | `https://api.openai.com/v1` |
 | `OPENAI_MODEL` | Default model name | `gpt-3.5-turbo` |
 | `LLM_PROVIDER` | Default LLM provider | `openai` |

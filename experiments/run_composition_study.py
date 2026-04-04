@@ -38,14 +38,17 @@ for _p in (_PROJECT_ROOT, _PROJECT_ROOT / "src"):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from agent_security_sandbox.core.llm_client import create_llm_client
-from agent_security_sandbox.tools.registry import ToolRegistry
-from agent_security_sandbox.defenses.registry import create_defense, create_composite_defense
-from agent_security_sandbox.evaluation.benchmark import BenchmarkSuite
-from agent_security_sandbox.evaluation.runner import ExperimentRunner
+from agent_security_sandbox.core.llm_client import create_llm_client  # noqa: E402
+from agent_security_sandbox.defenses.registry import (  # noqa: E402
+    create_composite_defense,
+    create_defense,
+)
+from agent_security_sandbox.evaluation.benchmark import BenchmarkSuite  # noqa: E402
+from agent_security_sandbox.evaluation.runner import ExperimentRunner  # noqa: E402
+from agent_security_sandbox.tools.registry import ToolRegistry  # noqa: E402
 
 # Active defenses (D0 is baseline / no defense, excluded from combinations)
-ACTIVE_DEFENSES = ["D1", "D2", "D3", "D4", "D5", "D6", "D7"]
+ACTIVE_DEFENSES = ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"]
 
 
 def _make_json_safe(obj: Any) -> Any:
@@ -114,7 +117,10 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     suite = BenchmarkSuite.load_from_directory(args.benchmark_dir)
-    print(f"Loaded {len(suite)} cases ({len(suite.attack_cases)} attack, {len(suite.benign_cases)} benign)")
+    print(
+        f"Loaded {len(suite)} cases"
+        f" ({len(suite.attack_cases)} attack, {len(suite.benign_cases)} benign)"
+    )
 
     combos = generate_combinations(max_size=args.max_combo_size)
     total_runs = len(combos) * args.runs
@@ -196,7 +202,10 @@ def main() -> None:
         combo_name = data.get("_meta", {}).get("combination_name", key.rsplit("_run", 1)[0])
         metrics = data.get("metrics", {})
         if combo_name not in avg_metrics:
-            avg_metrics[combo_name] = {"asr": [], "bsr": [], "fpr": [], "total_cost": [], "count": 0}
+            avg_metrics[combo_name] = {
+                "asr": [], "bsr": [], "fpr": [],
+                "total_cost": [], "count": 0,
+            }
         for m in ["asr", "bsr", "fpr", "total_cost"]:
             avg_metrics[combo_name][m].append(metrics.get(m, 0))
         avg_metrics[combo_name]["count"] += 1
@@ -214,7 +223,10 @@ def main() -> None:
     print("-" * 70)
     for name in sorted(summary.keys(), key=lambda x: (len(x.split("+")), x)):
         s = summary[name]
-        print(f"{name:<30} {s['asr']:.4f}   {s['bsr']:.4f}   {s['fpr']:.4f}   {s['total_cost']:>8.0f}")
+        print(
+            f"{name:<30} {s['asr']:.4f}   {s['bsr']:.4f}"
+            f"   {s['fpr']:.4f}   {s['total_cost']:>8.0f}"
+        )
 
     # Super-additivity analysis for pairs
     print("\n--- Super-Additivity Analysis (Pairwise) ---")
@@ -232,8 +244,16 @@ def main() -> None:
         expected_asr = summary[a]["asr"] * summary[b]["asr"]
         actual_asr = combo_data["asr"]
         delta = actual_asr - expected_asr
-        effect = "super-additive" if delta < -0.01 else "sub-additive" if delta > 0.01 else "additive"
-        print(f"{combo_name:<20} {expected_asr:>12.4f}   {actual_asr:>10.4f}   {delta:>+7.4f}   {effect:>15}")
+        if delta < -0.01:
+            effect = "super-additive"
+        elif delta > 0.01:
+            effect = "sub-additive"
+        else:
+            effect = "additive"
+        print(
+            f"{combo_name:<20} {expected_asr:>12.4f}"
+            f"   {actual_asr:>10.4f}   {delta:>+7.4f}   {effect:>15}"
+        )
 
     # Save analysis
     analysis = {

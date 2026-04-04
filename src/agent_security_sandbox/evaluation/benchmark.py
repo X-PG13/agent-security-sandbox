@@ -48,6 +48,7 @@ class BenchmarkCase(BaseModel):
     forbidden_actions: List[Dict[str, Any]] = Field(default_factory=list)
     tags: List[str] = Field(default_factory=list)
     difficulty: Union[int, str] = 1
+    threat_level: Optional[str] = None
 
 
 class BenchmarkSuite:
@@ -165,6 +166,12 @@ class BenchmarkSuite:
         """Return a new suite filtered by *injection_technique*."""
         return BenchmarkSuite(
             [c for c in self._cases if c.injection_technique == technique]
+        )
+
+    def filter_by_threat_level(self, threat_level: str) -> "BenchmarkSuite":
+        """Return a new suite filtered by *threat_level*."""
+        return BenchmarkSuite(
+            [c for c in self._cases if c.threat_level == threat_level]
         )
 
     # ------------------------------------------------------------------

@@ -1,0 +1,63 @@
+\section{Results}
+\label{sec:results}
+
+\subsection{Main Results}
+
+Table~\ref{tab:main_results} presents the mean \asr{}, \bsr{}, and \fpr{} across all 4 models $\times$ 3 runs for each defense strategy. All 11 defenses are compared on the same 250-case core benchmark (155 attack + 95 benign). For D8--D10, which were originally evaluated on the full 565-case benchmark, we extract the matched 250-case subset to ensure a fair cross-defense comparison. Statistical significance is assessed using McNemar's test with Bonferroni correction. Full 565-case results for D8--D10 appear in Appendix~\ref{sec:extended_results}.
+
+\input{tables/main_results}
+
+\paragraph{Finding 1: Prompt-Level Defenses Dominate.}
+\defense{D5} (Sandwich) achieves the lowest \asr{} (1.0\%) with the highest \bsr{} (93.4\%), confirming that goal re-anchoring is highly effective.
+\defense{D1} (Spotlighting) ranks second with 2.0\% \asr{}.
+Both defenses reduce \asr{} by $>$95\% relative to the D0 baseline while preserving $>$91\% \bsr{}.
+This demonstrates that prompt-layer intervention achieves the most favorable security--utility trade-off, challenging the intuition that more complex mechanisms are needed.
+
+\paragraph{Finding 2: Tool-Gating Defenses Trade Utility for Security.}
+Tool-gating defenses split into two clusters.
+\emph{Aggressive gates}---\defense{D8} (Semantic Firewall, 74\% ASR reduction but only 38.3\% BSR) and \defense{D9} (Dual-LLM, 36.5\% reduction, 57.8\% BSR)---achieve strong attack suppression but suffer from catastrophic over-blocking (\fpr{} $>$42\%), rendering them impractical as standalone defenses.
+\emph{Moderate gates}---\defense{D2} (Policy Gate, 25.7\% reduction) and \defense{D4} (Re-execution, 22.2\%)---show more balanced trade-offs with \fpr{} $\sim$22--24\%.
+\defense{D3} (Task Alignment) provides negligible improvement ($-$1.8\%), suggesting that LLM-based consistency checks alone are insufficient to detect injections.
+
+\paragraph{Finding 3: CIV Provides a Complementary Mechanism.}
+\defense{D10} (\civ{}) achieves 8.9\% \asr{}---a 78.4\% reduction from baseline---while maintaining 82.1\% \bsr{} on the 250-case core benchmark.
+On the full 565-case benchmark, \bsr{} drops to 50.3\%; however, the D0 baseline also drops to 53.1\%, indicating that this decline is largely attributable to mock-environment limitations on complex multi-tool workflows rather than CIV-specific false positives (see \S\ref{sec:limitations} and Appendix~\ref{sec:extended_results}).
+Nevertheless, operating through tool-call gating rather than prompt modification, CIV demonstrates that information-flow-based approaches provide a complementary defense mechanism when prompt-level defenses are already deployed.
+
+\paragraph{Finding 4: Model Robustness Varies Widely.}
+Claude~4.5 Sonnet exhibits the lowest baseline \asr{} (11.6\%), approximately 4--5$\times$ more robust than GPT-4o (49.2\%), DeepSeek~V3.1 (50.8\%), and Gemini~2.5 Flash (53.8\%).
+This large gap suggests that instruction-following alignment varies substantially across model families.
+However, all models benefit from effective defenses: D5 achieves $<$1.3\% \asr{} across all four models (Figure~\ref{fig:model_comparison}, Appendix).
+
+\subsection{CIV Ablation Study}
+\label{sec:ablation}
+
+Table~\ref{tab:civ_ablation} reports ablation results for \civ{}'s three signal components (GPT-4o, 250-case core benchmark).
+
+\input{tables/civ_ablation}
+
+\paragraph{Provenance Is the Core Signal.}
+Removing provenance causes the largest \asr{} increase (+115\%), confirming entity provenance tracking as the dominant attack detection mechanism.
+Conversely, provenance alone achieves 9.7\% \asr{}---nearly matching the full system---suggesting it captures the primary attack signal.
+
+\paragraph{Counterfactual Reasoning Is Counterproductive (v1 Finding).}
+Surprisingly, removing the heuristic counterfactual signal from CIV~v1 \emph{improves} security ($-$53\% \asr{}).
+The counterfactual heuristic is too permissive, inadvertently allowing attacks that provenance would block.
+This finding directly motivated the v1$\to$v2 redesign: CIV~v2 replaces this signal with plan deviation detection, achieving 8.9\% ASR ($-$28\% vs.\ v1-full).
+
+\paragraph{Tool Affinity Supports Utility.}
+The fingerprint (tool affinity) signal is most important for maintaining utility: removing it causes the largest BSR drop ($-$12\%).
+It helps CIV distinguish legitimate tool calls by modeling goal--tool compatibility.
+
+\paragraph{Weight Robustness.}
+To verify that \civ{}'s performance is not overfit to a specific weight configuration, we evaluate five weight settings: the default (0.45/0.30/0.25), equal weights (0.33/0.33/0.33), and three single-signal-heavy variants (provenance 0.60, compatibility 0.50, or plan 0.50).
+All five configurations produce identical ASR, BSR, and FPR on our evaluation set, indicating that \civ{}'s effectiveness is driven by the signal design rather than weight tuning.
+Full results appear in Appendix~\ref{app:weight_sensitivity}.
+
+\subsection{Cross-Benchmark Generalization}
+\label{sec:cross_benchmark}
+
+We tested selected defenses on InjecAgent \citep{zhan2024injecagent} and AgentDojo \citep{debenedetti2024agentdojo} using adapter-based format conversion.
+All defenses---including the D0 baseline---achieve 0\% \asr{} on both external benchmarks, revealing that \textbf{attack success judgments are tightly coupled to each benchmark's evaluation protocol} and cannot be transferred via format conversion alone.
+The mismatch arises from differences in forbidden-action semantics, task-tool coupling, and environment dynamics.
+This finding implies that \textbf{cross-benchmark defense comparisons require benchmark-native evaluation}, an open challenge for the community.

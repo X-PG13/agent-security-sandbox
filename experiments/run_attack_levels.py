@@ -31,7 +31,7 @@ for _p in (_PROJECT_ROOT, _PROJECT_ROOT / "src"):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from agent_security_sandbox.evaluation.benchmark import BenchmarkCase, BenchmarkSuite
+from agent_security_sandbox.evaluation.benchmark import BenchmarkCase, BenchmarkSuite  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -102,7 +102,9 @@ def _analyse_by_dimension(
     Returns:
         {dimension_value: {"total": N, "succeeded": M, "blocked": K}}
     """
-    groups: Dict[str, Dict[str, int]] = defaultdict(lambda: {"total": 0, "succeeded": 0, "blocked": 0})
+    groups: Dict[str, Dict[str, int]] = defaultdict(
+        lambda: {"total": 0, "succeeded": 0, "blocked": 0}
+    )
     for case, verdict in case_verdicts:
         val = getattr(case, dimension, None)
         if val is None:
@@ -183,7 +185,9 @@ def main() -> None:
         print(f"{'=' * 70}")
 
         # Aggregate across runs
-        agg: Dict[str, Dict[str, Dict[str, List[float]]]] = defaultdict(lambda: defaultdict(lambda: {"asr": []}))
+        agg: Dict[str, Dict[str, Dict[str, List[float]]]] = defaultdict(
+            lambda: defaultdict(lambda: {"asr": []})
+        )
         for key, a in full_analysis.items():
             defense = a["defense"]
             by_dim = a.get(f"by_{dim}", {})

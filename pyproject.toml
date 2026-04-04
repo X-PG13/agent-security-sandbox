@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agent-security-sandbox"
-version = "0.3.0"
-description = "A research sandbox for evaluating AI agent security against Indirect Prompt Injection attacks"
+version = "1.0.0"
+description = "A comprehensive benchmark framework for evaluating defenses against Indirect Prompt Injection in tool-using LLM agents"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
@@ -43,6 +43,11 @@ analysis = [
     "matplotlib>=3.7.0",
     "seaborn>=0.12.0",
 ]
+real = [
+    "google-api-python-client>=2.100.0",
+    "google-auth>=2.23.0",
+    "google-auth-oauthlib>=1.1.0",
+]
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.0.0",
@@ -50,7 +55,7 @@ dev = [
     "mypy>=1.0.0",
 ]
 all = [
-    "agent-security-sandbox[ui,analysis,dev]",
+    "agent-security-sandbox[ui,analysis,real,dev]",
 ]
 
 [project.urls]
@@ -73,6 +78,7 @@ addopts = "-v"
 [tool.ruff]
 target-version = "py310"
 line-length = 100
+exclude = ["scripts/generate_benchmark.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W"]

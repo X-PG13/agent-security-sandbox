@@ -1,5 +1,6 @@
 # Python
 venv/
+.venv/
 env/
 *.pyc
 __pycache__/
@@ -21,10 +22,14 @@ build/
 .env.local
 config/local.yaml
 
-# Experiment results
+# Experiment results (generated artifacts)
 experiments/results/*
 !experiments/results/.gitkeep
 *.log
+
+# Results: only keep full_eval (canonical paper results)
+results/*
+!results/full_eval/
 
 # Data
 data/benchmarks/*
@@ -36,6 +41,9 @@ data/benchmarks/*
 # Keep full_benchmark JSONL files
 !data/full_benchmark/*.jsonl
 
+# Ignore benchmark backup (pre-audit data)
+data/full_benchmark_backup/
+
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb
@@ -45,3 +53,6 @@ data/benchmarks/*
 .coverage
 htmlcov/
 .mypy_cache/
+
+# Linting
+.ruff_cache/

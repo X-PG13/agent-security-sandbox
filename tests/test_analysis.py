@@ -1,5 +1,4 @@
 """Tests for the statistical analysis module."""
-import math
 
 import pytest
 
@@ -10,8 +9,6 @@ from agent_security_sandbox.evaluation.analysis import (
     ComparisonResult,
     ConfidenceInterval,
     CostBenefit,
-    DifficultyAnalysis,
-    DifficultyCell,
     StatisticalAnalyzer,
     mcnemar_test,
     wilson_score_interval,
@@ -21,7 +18,6 @@ from agent_security_sandbox.evaluation.judge import JudgeResult, JudgeVerdict
 from agent_security_sandbox.evaluation.metrics import EvaluationMetrics
 from agent_security_sandbox.evaluation.reporter import Reporter
 from agent_security_sandbox.evaluation.runner import ExperimentResult
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -349,7 +345,10 @@ class TestReporterAnalysis:
                             CategoryMetrics(
                                 "attack_type", "data_exfiltration",
                                 5, 3, 0.6,
-                                ConfidenceInterval("attack_type_data_exfiltration", 0.6, 0.2, 0.9, 5),
+                                ConfidenceInterval(
+                                    "attack_type_data_exfiltration",
+                                    0.6, 0.2, 0.9, 5,
+                                ),
                             ),
                         ],
                     ),

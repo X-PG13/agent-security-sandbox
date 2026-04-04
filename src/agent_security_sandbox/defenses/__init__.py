@@ -10,6 +10,9 @@ from .d4_reexecution import ReExecutionDefense
 from .d5_sandwich import SandwichDefense
 from .d6_output_filter import OutputFilterDefense
 from .d7_input_classifier import InputClassifierDefense
+from .d8_semantic_firewall import SemanticFirewallDefense
+from .d9_dual_llm import DualLLMDefense
+from .d10_civ import ContextualIntegrityDefense
 from .registry import create_composite_defense, create_defense, load_defenses_from_yaml
 
 __all__ = [
@@ -24,6 +27,9 @@ __all__ = [
     "SandwichDefense",
     "OutputFilterDefense",
     "InputClassifierDefense",
+    "SemanticFirewallDefense",
+    "DualLLMDefense",
+    "ContextualIntegrityDefense",
     "CompositeDefense",
     "create_defense",
     "create_composite_defense",

@@ -1,0 +1,68 @@
+% Agent Security Sandbox: Benchmarking Defenses Against Indirect
+% Prompt Injection in Tool-Using LLM Agents
+%
+% Target venue: EMNLP 2026 / NeurIPS 2026 Datasets & Benchmarks
+% (8 pages + references + appendix)
+
+\documentclass[11pt]{article}
+\usepackage[hyperref]{acl}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\newtheorem{theorem}{Theorem}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{subcaption}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,fit,calc}
+
+% Compact lists
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=*}
+
+% Custom commands
+\usepackage{pifont}
+\newcommand{\xmark}{\ding{55}}
+\newcommand{\defense}[1]{\textsc{#1}}
+\newcommand{\civ}{\textsc{CIV}}
+\newcommand{\civtwo}{\textsc{CIV\,2.0}}
+\newcommand{\asb}{\textsc{ASB}}
+\newcommand{\asr}{\textsc{ASR}}
+\newcommand{\bsr}{\textsc{BSR}}
+\newcommand{\fpr}{\textsc{FPR}}
+
+\title{Agent Security Sandbox: Benchmarking Defenses Against\\Indirect Prompt Injection in Tool-Using LLM Agents}
+
+\author{
+  Yifan Zhao \\
+  Zhijiang College of Zhejiang University of Technology \\
+  \texttt{2720174336@qq.com}
+}
+
+\begin{document}
+\maketitle
+
+\input{sections/abstract}
+\input{sections/introduction}
+\input{sections/related_work}
+\input{sections/framework}
+\input{sections/experiments}
+\input{sections/results}
+\input{sections/adaptive_attacks}
+\input{sections/analysis}
+\input{sections/limitations}
+\input{sections/conclusion}
+
+\bibliography{references}
+
+\appendix
+\input{sections/civ_method}
+\input{sections/appendix}
+
+\end{document}
