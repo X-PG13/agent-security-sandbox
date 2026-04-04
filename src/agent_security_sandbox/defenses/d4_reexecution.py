@@ -13,6 +13,8 @@ Algorithm:
 4. Compare the original action with the clean action.
 5. If the similarity is below ``similarity_threshold``, block.
 """
+from __future__ import annotations
+
 import json
 import re
 from typing import Any, Dict, Optional, Tuple

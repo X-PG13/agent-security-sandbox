@@ -8,6 +8,8 @@ Provides two entry points:
 * ``load_defenses_from_yaml(yaml_path)`` -- load all defense definitions
   from a YAML configuration file and return a mapping of ID to strategy.
 """
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Any, Dict
 

@@ -14,6 +14,8 @@ Three variants are supported (Hines et al., 2024):
 * **encoding**: Base64-encodes the untrusted content and instructs the
   model to mentally decode it (keeping injections as opaque data).
 """
+from __future__ import annotations
+
 import base64
 from typing import Any, Dict, Tuple
 

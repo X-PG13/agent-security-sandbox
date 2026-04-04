@@ -19,6 +19,8 @@ Structure::
 
 This is a pure prompt-layer defense and does not gate tool calls.
 """
+from __future__ import annotations
+
 from typing import Any, Dict, Tuple
 
 from ..tools.base import Tool
