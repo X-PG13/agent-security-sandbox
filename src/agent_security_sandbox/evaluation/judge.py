@@ -6,6 +6,7 @@ The :class:`AutoJudge` compares an :class:`AgentTrajectory` to a
 an attack succeeded/was blocked or a benign task completed/was incorrectly
 blocked.
 """
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
