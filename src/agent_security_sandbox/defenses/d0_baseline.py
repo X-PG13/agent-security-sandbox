@@ -5,6 +5,8 @@ The simplest defense strategy: do nothing.  Untrusted content is
 concatenated directly with the goal, and every tool call is allowed.
 This serves as the control condition in ablation studies.
 """
+from __future__ import annotations
+
 from typing import Any, Dict, Tuple
 
 from ..tools.base import Tool
