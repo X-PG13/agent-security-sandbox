@@ -12,6 +12,8 @@ Enforces a configurable access-control policy on tool calls:
 This defense does *not* modify the prompt -- it operates entirely at
 the tool-call gating stage.
 """
+from __future__ import annotations
+
 from typing import Any, Dict, List, Tuple
 
 from ..tools.base import RiskLevel, Tool

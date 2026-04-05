@@ -12,6 +12,8 @@ original goal.  Two modes are supported:
 If the alignment score falls below ``alignment_threshold`` the tool
 call is blocked.
 """
+from __future__ import annotations
+
 import re
 from typing import Any, Dict, List, Tuple
 

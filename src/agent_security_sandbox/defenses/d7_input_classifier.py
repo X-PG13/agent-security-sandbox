@@ -22,6 +22,8 @@ This is primarily a **pre-processing** defense operating at the prompt
 layer, complementary to D1 (Spotlighting) which marks but does not
 filter content, and D6 (Output Filter) which checks outgoing parameters.
 """
+from __future__ import annotations
+
 import re
 from typing import Any, Dict, List, Tuple
 
