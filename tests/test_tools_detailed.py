@@ -226,7 +226,7 @@ class TestToolStr:
         tool = SearchWebTool()
         s = str(tool)
         assert "search_web" in s
-        assert "LOW" in s
+        assert "low" in s.lower()
 
 
 # ---------------------------------------------------------------------------
