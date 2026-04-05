@@ -56,3 +56,4 @@ htmlcov/
 
 # Linting
 .ruff_cache/
+paper/
