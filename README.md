@@ -1,6 +1,6 @@
 # Agent Security Sandbox (ASB)
 
-[![Paper](https://img.shields.io/badge/Paper-Under%20Review-orange.svg)](paper/)
+[![Paper](https://img.shields.io/badge/Paper-Draft-lightgrey.svg)](paper/)
 [![CI](https://github.com/X-PG13/agent-security-sandbox/actions/workflows/ci.yml/badge.svg)](https://github.com/X-PG13/agent-security-sandbox/actions)
 [![codecov](https://codecov.io/gh/X-PG13/agent-security-sandbox/graph/badge.svg)](https://codecov.io/gh/X-PG13/agent-security-sandbox)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
@@ -8,8 +8,6 @@
 [![Benchmark: 565 cases](https://img.shields.io/badge/Benchmark-565%20cases-orange.svg)](data/full_benchmark/)
 
 **A comprehensive benchmark framework for evaluating defenses against Indirect Prompt Injection (IPI) in tool-using LLM agents.** ASB provides 565 test cases, 11 defense strategies, and automated evaluation across 4 frontier LLMs — enabling reproducible, controlled comparison of IPI defenses.
-
-> **Paper:** *Agent Security Sandbox: Benchmarking Defenses Against Indirect Prompt Injection in Tool-Using LLM Agents* (Zhao, 2026)
 
 ## Highlights
 
