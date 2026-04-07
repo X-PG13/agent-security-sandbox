@@ -33,7 +33,7 @@ DEFENSE_NAMES = {
     "D7": "Input Classifier",
     "D8": "Semantic FW",
     "D9": "Dual-LLM",
-    "D10": "CIV (ours)",
+    "D10": "CIV",
 }
 
 DEFENSE_ORDER = ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"]

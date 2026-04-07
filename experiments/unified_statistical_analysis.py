@@ -352,7 +352,7 @@ def main():
         "D0": "Baseline", "D1": "Spotlighting", "D2": "Policy Gate",
         "D3": "Task Alignment", "D4": "Re-execution", "D5": "Sandwich",
         "D6": "Output Filter", "D7": "Input Classifier",
-        "D8": "Semantic FW", "D9": "Dual-LLM", "D10": "CIV (ours)",
+        "D8": "Semantic FW", "D9": "Dual-LLM", "D10": "CIV",
     }
 
     latex_lines = [
