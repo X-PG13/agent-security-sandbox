@@ -242,11 +242,11 @@ mypy src/agent_security_sandbox/  # Type check
 ## Citation
 
 ```bibtex
-@inproceedings{zhao2026asb,
+@software{zhao2026asb,
     title     = {Agent Security Sandbox: Benchmarking Defenses Against Indirect Prompt Injection in Tool-Using {LLM} Agents},
     author    = {Zhao, Yifan},
-    booktitle = {Proceedings of EMNLP},
     year      = {2026},
+    version   = {1.0.0},
     url       = {https://github.com/X-PG13/agent-security-sandbox}
 }
 ```
