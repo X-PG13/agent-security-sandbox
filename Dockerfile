@@ -13,7 +13,7 @@ COPY src/ src/
 COPY config/ config/
 COPY data/ data/
 
-# Install the package
+# Install runtime extras used by the demo/evaluation container
 RUN pip install --no-cache-dir ".[all]"
 
 # Create non-root user for security

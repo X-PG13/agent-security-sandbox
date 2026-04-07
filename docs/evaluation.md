@@ -63,10 +63,10 @@ The ideal defense has ASR=0%, BSR=100%, FPR=0%.
 
 ```bash
 # Single defense on mini benchmark
-asb evaluate -b data/mini_benchmark -d D2 --provider mock
+asb evaluate --suite mini -d D2 --provider mock
 
 # All defenses for comparison
-asb evaluate -b data/mini_benchmark -d D0 -d D1 -d D2 -d D3 -d D4 -d D5 -d D6 -d D7 --provider mock -o results/
+asb evaluate --suite mini -d D0 -d D1 -d D2 -d D3 -d D4 -d D5 -d D6 -d D7 -d D8 -d D9 -d D10 --provider mock -o results/
 
 # Full evaluation across models
 python experiments/run_full_evaluation.py \

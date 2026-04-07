@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/X-PG13/agent-security-sandbox/actions/workflows/ci.yml/badge.svg)](https://github.com/X-PG13/agent-security-sandbox/actions)
 [![codecov](https://codecov.io/gh/X-PG13/agent-security-sandbox/graph/badge.svg)](https://codecov.io/gh/X-PG13/agent-security-sandbox)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-1f6feb.svg)](https://x-pg13.github.io/agent-security-sandbox/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Benchmark: 565 cases](https://img.shields.io/badge/Benchmark-565%20cases-orange.svg)](data/full_benchmark/)
@@ -48,7 +49,19 @@
 ```bash
 git clone https://github.com/X-PG13/agent-security-sandbox.git
 cd agent-security-sandbox
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
+
+Optional extras:
+
+```bash
+# UI demo + analysis notebooks + real-provider integrations
 pip install -e ".[all]"
+
+# Tests, release tooling, and docs authoring
+pip install -e ".[maintainer]"
 ```
 
 ### Run with Mock LLM (no API key needed)
@@ -58,10 +71,10 @@ pip install -e ".[all]"
 asb run "Read email_001 and summarize it" --provider mock --defense D5
 
 # Benchmark evaluation (mini = 40 cases, fast)
-asb evaluate --benchmark data/mini_benchmark --provider mock -d D0 -d D5 -d D10 -o results/quick_test
+asb evaluate --suite mini --provider mock -d D0 -d D5 -d D10 -o results/quick_test
 
 # Full benchmark (565 cases)
-asb evaluate --benchmark data/full_benchmark --provider mock -d D0 -d D5 -o results/full_mock
+asb evaluate --suite full --provider mock -d D0 -d D5 -o results/full_mock
 
 # Generate report
 asb report --results-dir results/quick_test --format markdown
@@ -233,10 +246,11 @@ agent-security-sandbox/
 ## Development
 
 ```bash
-pip install -e ".[dev]"
+pip install -e ".[maintainer]"
 pytest tests/ -v              # Run tests (562 tests)
 ruff check src/ tests/        # Lint
 mypy src/agent_security_sandbox/  # Type check
+mkdocs build --strict         # Build docs site
 ```
 
 ## Citation

@@ -133,21 +133,49 @@ def _import_reporter():
 # ---------------------------------------------------------------------------
 
 def _resolve_config_dir() -> Path:
-    """Return the path to the project-level ``config/`` directory.
+    """Return the best available ``config/`` directory.
 
-    Strategy:
-      1. Walk up from this file: ``cli/main.py`` -> ``cli/`` ->
-         ``agent_security_sandbox/`` -> ``src/`` -> repo-root -> ``config/``.
-      2. If that does not exist, fall back to the current working directory.
+    Search order:
+      1. ``ASB_CONFIG_DIR`` if explicitly provided.
+      2. Source checkout root (editable install / repo clone).
+      3. Current working directory.
+      4. Bundled package resources inside a built wheel.
     """
-    candidate = Path(__file__).resolve().parents[2] / "config"
-    if candidate.is_dir():
-        return candidate
-    # Fallback: repo root relative to cwd
-    cwd_candidate = Path.cwd() / "config"
-    if cwd_candidate.is_dir():
-        return cwd_candidate
-    return candidate  # return the canonical path even if it doesn't exist yet
+    explicit = os.getenv("ASB_CONFIG_DIR")
+    if explicit:
+        return Path(explicit).expanduser().resolve()
+
+    candidates = [
+        Path(__file__).resolve().parents[3] / "config",
+        Path.cwd() / "config",
+        Path(__file__).resolve().parents[1] / "_bundled" / "config",
+    ]
+    for candidate in candidates:
+        if candidate.is_dir():
+            return candidate
+    return candidates[0]
+
+
+def _resolve_benchmark_dir(suite_name: str) -> Path:
+    """Resolve a named benchmark suite to a concrete directory."""
+    relative = {
+        "mini": Path("data") / "mini_benchmark",
+        "full": Path("data") / "full_benchmark",
+    }[suite_name]
+
+    candidates = [
+        Path(__file__).resolve().parents[3] / relative,
+        Path.cwd() / relative,
+    ]
+    if suite_name == "mini":
+        candidates.append(
+            Path(__file__).resolve().parents[1] / "_bundled" / "data" / "mini_benchmark"
+        )
+
+    for candidate in candidates:
+        if candidate.is_dir():
+            return candidate
+    return candidates[0]
 
 
 def _build_llm_client(provider: str, model: Optional[str], base_url: Optional[str]):
@@ -262,7 +290,7 @@ def cli():
 @click.argument("goal")
 @click.option(
     "--defense", "-d", default=lambda: os.getenv("DEFAULT_DEFENSE", "D0"),
-    help="Defense strategy ID (D0-D7). [env: DEFAULT_DEFENSE]",
+    help="Defense strategy ID (D0-D10). [env: DEFAULT_DEFENSE]",
 )
 @click.option(
     "--provider", default=lambda: os.getenv("LLM_PROVIDER", "mock"),
@@ -377,7 +405,7 @@ def run(goal, defense, provider, model, base_url, max_steps, function_calling, v
 )
 @click.option(
     "--suite", type=click.Choice(["mini", "full"]), default=None,
-    help="Shortcut: 'mini' -> data/mini_benchmark, 'full' -> data/full_benchmark.",
+    help="Shortcut: 'mini' -> bundled smoke benchmark, 'full' -> full repo benchmark.",
 )
 @click.option(
     "--defense", "-d", multiple=True, default=["D0"],
@@ -443,12 +471,7 @@ def evaluate(
     """
     # -- Resolve benchmark path via --suite shortcut or --benchmark ---------
     if benchmark is None and suite is not None:
-        repo_root = Path(__file__).resolve().parents[3]
-        suite_map = {
-            "mini": repo_root / "data" / "mini_benchmark",
-            "full": repo_root / "data" / "full_benchmark",
-        }
-        benchmark = str(suite_map[suite])
+        benchmark = str(_resolve_benchmark_dir(suite))
     elif benchmark is None:
         raise click.ClickException(
             "Either --benchmark or --suite must be provided."

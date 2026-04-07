@@ -65,10 +65,10 @@ Our composition study examines how combining multiple defenses affects security-
 | **BIPIA** | ~500 | 0 | Rule + LLM | No | No |
 | **AgentDojo** (Debenedetti et al., 2024) | 97 | 0 | Task-specific | Yes | No |
 | **PromptBench** (Zhu et al., 2024) | Varies | 0 | Accuracy | No | No |
-| **Ours (ASB)** | 250 | 8 (D0-D7) | Rule + LLM + Composite | Yes | Yes |
+| **Ours (ASB)** | 565 | 11 (D0-D10) | Rule + LLM + Composite | Yes | Yes |
 
 Key differentiators of our framework:
-1. **Defense-centric**: Unlike prior benchmarks that focus on attack evaluation, we provide 8 pluggable defense strategies with standardized evaluation.
+1. **Defense-centric**: Unlike prior benchmarks that focus on attack evaluation, we provide 11 pluggable defense strategies with standardized evaluation.
 2. **Composition analysis**: We systematically study how defense combinations interact.
 3. **Dual evaluation mode**: Support for both text ReAct and function calling.
 4. **Multi-layer judging**: Rule-based, LLM-based, and composite judges with configurable strictness.
@@ -83,7 +83,7 @@ Our work complements broader LLM safety benchmarks:
 
 Our contribution occupies a unique position at the intersection of:
 1. **IPI attack benchmarking** (extending BIPIA/InjecAgent with more attack types and evasion techniques)
-2. **Defense strategy evaluation** (providing the first systematic comparison of 8 defense strategies)
+2. **Defense strategy evaluation** (providing a systematic comparison of 11 defense strategies, with a matched 250-case subset for cross-defense fairness)
 3. **Defense composition** (novel study of how defenses interact when combined)
 4. **Practical agent security** (supporting function calling mode used in production deployments)
 

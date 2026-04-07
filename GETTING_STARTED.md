@@ -8,10 +8,13 @@
 cd agent-security-sandbox
 
 # Create virtual environment (recommended)
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Install with all optional dependencies
+# Minimal runtime install
+pip install -e .
+
+# Optional runtime extras (UI + analysis + real providers)
 pip install -e ".[all]"
 ```
 
@@ -22,7 +25,7 @@ pip install -e ".[all]"
 asb run "Read email_001 and summarize it" --provider mock --defense D0
 
 # Batch benchmark evaluation
-asb evaluate --benchmark data/mini_benchmark --provider mock -d D0 -d D1 --output results/test
+asb evaluate --suite mini --provider mock -d D0 -d D1 --output results/test
 
 # Generate report
 asb report --results-dir results/test --format markdown
@@ -65,8 +68,8 @@ print(trajectory.final_answer)
 ## Development
 
 ```bash
-# Install dev dependencies
-pip install -e ".[dev]"
+# Install dev + docs dependencies
+pip install -e ".[maintainer]"
 
 # Run tests
 pytest tests/ -q
@@ -74,6 +77,7 @@ pytest tests/ -q
 # Lint and type check
 make lint
 make type-check
+make docs-build
 ```
 
 See the [README](README.md) for full documentation, or browse the [docs/](docs/) directory for architecture details, defense descriptions, and evaluation methodology.

@@ -14,7 +14,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install ruff
+          cache: "pip"
+      - run: pip install -e ".[dev]"
       - run: ruff check src/ tests/
 
   type-check:
@@ -24,6 +25,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
       - run: pip install -e ".[dev]"
       - run: mypy src/agent_security_sandbox/ --ignore-missing-imports
 
@@ -37,6 +39,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: "pip"
       - run: pip install -e ".[dev]"
       - run: pytest tests/ -v --cov=agent_security_sandbox --cov-report=xml
       - uses: codecov/codecov-action@v4
@@ -44,3 +47,33 @@ jobs:
         with:
           file: ./coverage.xml
           fail_ci_if_error: false
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - run: pip install -e ".[dev]"
+      - run: python -m build
+      - run: python -m twine check dist/*
+      - run: python -m venv /tmp/asb-wheel-test
+      - run: /tmp/asb-wheel-test/bin/pip install dist/*.whl
+      - run: /tmp/asb-wheel-test/bin/asb --help
+      - run: /tmp/asb-wheel-test/bin/asb run "Read email_001 and summarize it" --provider mock --defense D0 --quiet
+      - run: /tmp/asb-wheel-test/bin/asb evaluate --suite mini --provider mock -d D0 -o /tmp/asb-smoke
+      - run: test -f /tmp/asb-smoke/results_D0.json
+      - run: test -f /tmp/asb-smoke/report.md
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - run: pip install -e ".[docs]"
+      - run: mkdocs build --strict

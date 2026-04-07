@@ -48,14 +48,23 @@ real = [
     "google-auth>=2.23.0",
     "google-auth-oauthlib>=1.1.0",
 ]
+docs = [
+    "mkdocs>=1.6.0",
+    "mkdocs-material>=9.5.0",
+]
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
+    "build>=1.2.2",
+    "twine>=5.1.1",
 ]
 all = [
-    "agent-security-sandbox[ui,analysis,real,dev]",
+    "agent-security-sandbox[ui,analysis,real]",
+]
+maintainer = [
+    "agent-security-sandbox[all,dev,docs]",
 ]
 
 [project.urls]
@@ -68,6 +77,10 @@ asb = "agent_security_sandbox.cli.main:cli"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/agent_security_sandbox"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"config" = "src/agent_security_sandbox/_bundled/config"
+"data/mini_benchmark" = "src/agent_security_sandbox/_bundled/data/mini_benchmark"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

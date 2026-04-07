@@ -12,9 +12,9 @@ Our evaluation framework uses **mock tool environments** (simulated email, file 
 
 ### 2. Benchmark Coverage
 
-Although our benchmark includes 250 cases across 8 attack types, several important dimensions remain underexplored:
+Although the released benchmark includes 565 cases spanning benign tasks, multilingual injections, RAG poisoning, tool-output manipulation, and adaptive attack templates, several important dimensions remain underexplored:
 
-- **Attack diversity**: We focus on English-language injections. While v0.3.0 added encoding-based evasion techniques (Base64, ROT13, Unicode homoglyphs), cross-lingual attacks and multi-modal injection vectors (images, audio) are not yet covered.
+- **Attack diversity**: The benchmark now includes multilingual and encoding-based injections, but many defenses remain largely English-centric and we do not yet cover multi-modal injection vectors (images, audio) or browser-native payloads.
 - **Adaptive attacks**: Our injections are *static*—they do not adapt based on the agent's responses or defense behavior. Sophisticated adversaries may craft *adaptive* injections that probe for defense weaknesses iteratively.
 - **Novel attack types**: The threat landscape evolves rapidly. Attack categories like indirect prompt injection via tool outputs, retrieval-augmented generation (RAG) poisoning, and multi-agent collusion are not yet modeled.
 - **Difficulty calibration**: Our difficulty ratings (1–3) are manually assigned and not empirically validated against actual attack success rates across models.

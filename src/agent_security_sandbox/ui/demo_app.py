@@ -26,10 +26,27 @@ from agent_security_sandbox.ui.components import (
 
 
 def _resolve_config_dir() -> Path:
-    candidate = Path(__file__).resolve().parents[3] / "config"
-    if candidate.is_dir():
-        return candidate
-    return Path.cwd() / "config"
+    candidates = [
+        Path(__file__).resolve().parents[3] / "config",
+        Path.cwd() / "config",
+        Path(__file__).resolve().parents[1] / "_bundled" / "config",
+    ]
+    for candidate in candidates:
+        if candidate.is_dir():
+            return candidate
+    return candidates[0]
+
+
+def _default_benchmark_dir() -> str:
+    candidates = [
+        Path(__file__).resolve().parents[3] / "data" / "mini_benchmark",
+        Path.cwd() / "data" / "mini_benchmark",
+        Path(__file__).resolve().parents[1] / "_bundled" / "data" / "mini_benchmark",
+    ]
+    for candidate in candidates:
+        if candidate.is_dir():
+            return str(candidate)
+    return "data/mini_benchmark"
 
 
 def main():
@@ -54,7 +71,7 @@ def main():
 
         model = st.text_input(
             "Model Name",
-            value="" if provider == "mock" else "gpt-3.5-turbo",
+            value="" if provider == "mock" else "gpt-4o",
             help="Leave empty for provider default",
         )
 
@@ -68,9 +85,9 @@ def main():
 
         defense_id = st.selectbox(
             "Defense Strategy",
-            ["D0", "D1", "D2", "D3", "D4"],
+            ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"],
             index=0,
-            help="D0=None, D1=Spotlighting, D2=PolicyGate, D3=TaskAlignment, D4=ReExecution",
+            help="Select any defense from the full D0-D10 benchmark suite.",
         )
 
         max_steps = st.slider("Max Agent Steps", min_value=1, max_value=20, value=10)
@@ -209,13 +226,13 @@ def main():
 
         bench_dir = st.text_input(
             "Benchmark Directory",
-            value="data/mini_benchmark",
+            value=_default_benchmark_dir(),
         )
 
         defense_choices = st.multiselect(
             "Defenses to Compare",
-            ["D0", "D1", "D2", "D3", "D4"],
-            default=["D0", "D1", "D2"],
+            ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"],
+            default=["D0", "D5", "D10"],
         )
 
         if st.button("Run Evaluation", type="primary", key="eval_btn"):

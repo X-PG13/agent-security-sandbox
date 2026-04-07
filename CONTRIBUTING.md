@@ -19,7 +19,7 @@ cd agent-security-sandbox
 # Create a virtual environment and install dev dependencies
 python -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[maintainer]"
 ```
 
 ### Running Tests
@@ -36,6 +36,7 @@ We enforce zero errors from both linters:
 ```bash
 ruff check src/ tests/
 mypy src/
+mkdocs build --strict
 ```
 
 Fix auto-fixable lint issues with:

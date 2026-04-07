@@ -1,10 +1,13 @@
-.PHONY: install dev test lint format build clean run evaluate serve
+.PHONY: install install-all dev test lint format type-check build docs-build docs-serve clean run evaluate serve
 
 install:
 	pip install -e .
 
-dev:
+install-all:
 	pip install -e ".[all]"
+
+dev:
+	pip install -e ".[maintainer]"
 
 test:
 	pytest tests/ -v
@@ -24,8 +27,14 @@ type-check:
 build:
 	python -m build
 
+docs-build:
+	mkdocs build --strict
+
+docs-serve:
+	mkdocs serve
+
 clean:
-	rm -rf dist/ build/ *.egg-info src/*.egg-info
+	rm -rf dist/ build/ site/ *.egg-info src/*.egg-info
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 

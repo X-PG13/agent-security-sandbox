@@ -13,9 +13,10 @@ ASB is organized into three layers:
 
 ### Layer 2: Security & Evaluation
 
-- **DefenseStrategy**: Abstract interface for all defenses (D0-D7)
-  - D0: Baseline (no defense), D1: Spotlighting, D2: Policy Gate, D3: Task Alignment
+- **DefenseStrategy**: Abstract interface for all defenses (D0-D10)
+  - D0: Baseline, D1: Spotlighting, D2: Policy Gate, D3: Task Alignment
   - D4: Re-execution, D5: Sandwich, D6: Output Filter, D7: Input Classifier
+  - D8: Semantic Firewall, D9: Dual-LLM, D10: CIV
   - `prepare_context()`: Modifies the prompt before sending to LLM
   - `should_allow_tool_call()`: Gates tool execution at runtime
 - **CompositeDefense**: Pipeline combining multiple strategies

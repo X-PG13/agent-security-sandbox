@@ -1,0 +1,30 @@
+site_name: Agent Security Sandbox
+site_description: Benchmarking defenses against indirect prompt injection in tool-using LLM agents.
+site_url: https://x-pg13.github.io/agent-security-sandbox/
+repo_url: https://github.com/X-PG13/agent-security-sandbox
+repo_name: X-PG13/agent-security-sandbox
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.sections
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Architecture: architecture.md
+  - Configuration: configuration.md
+  - Defenses: defenses.md
+  - Evaluation: evaluation.md
+  - Extending: extending.md
+  - Threat Model: threat_model.md
+  - Limitations & Ethics: limitations_and_ethics.md
+  - Related Work: related_work.md
