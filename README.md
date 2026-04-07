@@ -1,6 +1,5 @@
 # Agent Security Sandbox (ASB)
 
-[![Paper](https://img.shields.io/badge/Paper-Draft-lightgrey.svg)](paper/)
 [![CI](https://github.com/X-PG13/agent-security-sandbox/actions/workflows/ci.yml/badge.svg)](https://github.com/X-PG13/agent-security-sandbox/actions)
 [![codecov](https://codecov.io/gh/X-PG13/agent-security-sandbox/graph/badge.svg)](https://codecov.io/gh/X-PG13/agent-security-sandbox)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
@@ -25,7 +24,7 @@
 | **D0** Baseline | 0.413 | 0.912 | — | 30% |
 | **D5** Sandwich | **0.010** | **0.934** | **-97.5%** | **0%** |
 | **D1** Spotlighting | 0.020 | 0.913 | -95.1% | **0%** |
-| **D10** CIV (ours) | 0.089 | 0.821 | -78.4% | **0%** |
+| **D10** CIV | 0.089 | 0.821 | -78.4% | **0%** |
 | **D8** Semantic Firewall | 0.107 | 0.383 | -74.0% | **0%** |
 | **D2** Policy Gate | 0.307 | 0.762 | -25.7% | **0%** |
 | **D9** Dual-LLM | 0.263 | 0.578 | -36.5% | 10% |
@@ -167,7 +166,7 @@ Each case is a JSON object:
 | D7 | Input Classifier | Prompt | Injection pattern removal | ✓ | |
 | D8 | Semantic Firewall | Tool | Embedding-based drift detection | | ✓ |
 | D9 | Dual-LLM | Tool | Two-model screening | | ✓ |
-| D10 | **CIV** (ours) | Multi | Provenance + embedding compatibility + plan deviation | | ✓ |
+| D10 | **CIV** | Multi | Provenance + embedding compatibility + plan deviation | | ✓ |
 
 ### Adding a Custom Defense
 
@@ -225,8 +224,7 @@ agent-security-sandbox/
 ├── config/             # YAML configs (tools, models, defenses)
 ├── experiments/        # Experiment scripts
 ├── scripts/            # Reproduction scripts
-├── tests/              # 557 tests
-├── paper/              # LaTeX paper source
+├── tests/              # 562 tests
 ├── figures/            # Generated figures
 ├── results/            # Experiment results
 └── docs/               # Documentation
@@ -236,7 +234,7 @@ agent-security-sandbox/
 
 ```bash
 pip install -e ".[dev]"
-pytest tests/ -v              # Run tests (557 tests)
+pytest tests/ -v              # Run tests (562 tests)
 ruff check src/ tests/        # Lint
 mypy src/agent_security_sandbox/  # Type check
 ```
