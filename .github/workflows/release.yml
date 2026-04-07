@@ -6,10 +6,10 @@ on:
       - "v*"
 
 jobs:
-  build-and-publish:
+  build-dist:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -23,7 +23,34 @@ jobs:
         with:
           name: dist
           path: dist/*
-      # PyPI publish disabled until trusted publisher is configured
-      # - uses: pypa/gh-action-pypi-publish@release/v1
-      #   with:
-      #     skip-existing: true
+
+  github-release:
+    needs: build-dist
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes
+
+  pypi-publish:
+    needs: build-dist
+    if: vars.PYPI_PUBLISH == 'true'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1

@@ -205,7 +205,7 @@ class MyDefense(DefenseStrategy):
 ./scripts/reproduce.sh --provider openai-compatible --base-url https://your-proxy.com/v1
 
 # Individual experiments
-./scripts/reproduce_main_table.sh      # Table 1: Main results (D0-D7 on 250-case core)
+./scripts/reproduce_main_table.sh      # Table 1: matched-subset comparison used in the paper
 ./scripts/reproduce_ablation.sh        # Table 3: CIV ablation (CIV v1 vs v2 variants)
 ./scripts/reproduce_adaptive.sh        # Table 4: Adaptive attacks
 ./scripts/reproduce_composition.sh     # Table 5: Defense composition
@@ -215,7 +215,7 @@ class MyDefense(DefenseStrategy):
 ./scripts/reproduce_main_table.sh --provider mock
 ```
 
-> **Note on Table 1:** D0–D7 are evaluated on the 250-case core benchmark (the original experimental scope). D8–D10 are evaluated on the full 565-case benchmark; the 250-case matched subset numbers are used in Table 1 for cross-defense comparison. The 250-case subset is a strict subset of the 565 case IDs, making the comparison fair.
+> **Note on the paper tables:** The framework exposes all 11 defenses on the 565-case benchmark. For the main paper comparison, Table 1 uses a matched 250-case subset so every listed defense is compared on the same case IDs.
 
 ## Project Structure
 
