@@ -260,7 +260,7 @@ mkdocs build --strict         # Build docs site
     title     = {Agent Security Sandbox: Benchmarking Defenses Against Indirect Prompt Injection in Tool-Using {LLM} Agents},
     author    = {Zhao, Yifan},
     year      = {2026},
-    version   = {1.0.0},
+    version   = {1.0.1},
     url       = {https://github.com/X-PG13/agent-security-sandbox}
 }
 ```

@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-04-08
+
+### Added
+
+- MkDocs documentation site with GitHub Pages publishing workflow.
+- GitHub Release automation that uploads build artifacts and can optionally
+  publish to PyPI through Trusted Publishing when explicitly enabled.
+
+### Changed
+
+- Split installation profiles into minimal runtime (`.`), runtime extras
+  (`.[all]`), and maintainer tooling (`.[maintainer]`).
+- CI now validates package builds, runs `twine check`, performs a wheel
+  install smoke test, and builds the docs site in strict mode.
+- CLI and Streamlit entry points now resolve bundled config files and the
+  mini benchmark correctly when installed from a built wheel.
+- README and supplementary docs were tightened to match the current
+  565-case / 11-defense project scope.
+
+### Fixed
+
+- Citation metadata now uses software-style references consistently.
+- Release notes and reproduction guidance no longer imply that the
+  repository itself is limited to the older D0-D7 comparison scope.
+
+## [1.0.0] - 2026-04-05
+
+### Added
+
+- Full `Agent Security Sandbox` benchmark release with 565 benchmark cases,
+  11 defense strategies (`D0-D10`), and automated evaluation across four
+  frontier LLM families.
+- Expanded benchmark coverage for multilingual injections, RAG poisoning,
+  tool-output manipulation, adaptive attacks, and generated benign tasks.
+- Composite defense pipeline, experiment scripts, paper reproduction scripts,
+  and publication-quality figure generation.
+- Project-level contributor materials including `CONTRIBUTING.md`,
+  `CODE_OF_CONDUCT.md`, `SECURITY.md`, issue templates, PR template,
+  `CITATION.cff`, and comprehensive `docs/` content.
+
+### Changed
+
+- Stabilized the public package as version `1.0.0` with Python `3.10+`
+  support, editable installation, CLI entry points, and multi-version CI.
+- Standardized the repository around the 565-case benchmark while retaining
+  the matched 250-case subset used for fair cross-defense comparisons in the
+  paper tables.
+- Updated project metadata, badges, and benchmark summaries to reflect the
+  full 11-defense release.
+
 ## [0.3.0] - 2026-03-09
 
 ### Added
