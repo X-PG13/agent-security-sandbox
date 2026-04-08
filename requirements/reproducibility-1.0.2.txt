@@ -18,7 +18,7 @@ mypy==1.19.1
 numpy==2.4.3
 openai==2.30.0
 pandas==2.3.3
-pip-audit==2.9.0
+pip-audit==2.10.0
 pydantic==2.12.5
 python-dotenv==1.2.2
 PyYAML==6.0.3
