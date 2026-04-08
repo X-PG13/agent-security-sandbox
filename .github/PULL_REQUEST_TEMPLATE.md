@@ -7,6 +7,12 @@ Briefly describe what this PR does.
 - Change 1
 - Change 2
 
+## Triage
+
+- Suggested area label: `area: ...`
+- Suggested priority: `priority: ...`
+- Suggested status after review: `status: ready` or `status: blocked`
+
 ## Testing
 
 - [ ] All existing tests pass (`pytest tests/ -v`)

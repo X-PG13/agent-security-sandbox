@@ -2,7 +2,9 @@
 name: Bug Report
 about: Report a bug to help us improve
 title: "[Bug] "
-labels: bug
+labels:
+  - bug
+  - "status: needs-triage"
 assignees: ''
 ---
 
@@ -27,4 +29,4 @@ What actually happened (include error messages / tracebacks).
 
 - OS: [e.g. macOS 14, Ubuntu 22.04]
 - Python version: [e.g. 3.11.7]
-- Package version: [e.g. 0.1.0]
+- Package version: [e.g. 1.0.2]

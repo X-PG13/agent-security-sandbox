@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Advisory
+    url: https://github.com/X-PG13/agent-security-sandbox/security/advisories/new
+    about: Report security vulnerabilities privately instead of opening a public issue.
+  - name: Documentation And FAQ
+    url: https://x-pg13.github.io/agent-security-sandbox/
+    about: Check the docs site and FAQ before filing a usage question.

@@ -2,7 +2,9 @@
 name: Feature Request
 about: Suggest a new feature or improvement
 title: "[Feature] "
-labels: enhancement
+labels:
+  - enhancement
+  - "status: needs-triage"
 assignees: ''
 ---
 

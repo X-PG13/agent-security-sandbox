@@ -37,3 +37,4 @@ nav:
       - Related Work: related_work.md
   - Maintainers:
       - Release Checklist: release.md
+      - Issue Triage: triage.md

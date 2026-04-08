@@ -68,10 +68,18 @@ ruff check --fix src/ tests/
 4. **Open a pull request** against `main` with a clear description of the change.
 5. Ensure CI checks pass. A maintainer will review your PR.
 
+## Labels And Triage
+
+- New issues are expected to start with `status: needs-triage`.
+- Maintainers classify work along three dimensions: work type, area, and status.
+- Priority labels are added only after maintainer triage.
+- The current label taxonomy and maintainer workflow are documented in [`docs/triage.md`](docs/triage.md).
+
 ## Maintainer Notes
 
 - Release steps are documented in [`docs/release.md`](docs/release.md).
 - Reproduction inputs, artifact mapping, and checksum verification live in [`docs/reproducibility.md`](docs/reproducibility.md).
+- Label ownership, CODEOWNERS scope, and issue triage rules are documented in [`docs/triage.md`](docs/triage.md).
 
 ## Reporting Bugs
 

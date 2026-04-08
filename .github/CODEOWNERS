@@ -1,0 +1,21 @@
+# Default ownership
+* @X-PG13
+
+# Governance and automation
+/.github/ @X-PG13
+/docs/ @X-PG13
+/scripts/ @X-PG13
+
+# Core implementation
+/src/agent_security_sandbox/core/ @X-PG13
+/src/agent_security_sandbox/cli/ @X-PG13
+/src/agent_security_sandbox/defenses/ @X-PG13
+/src/agent_security_sandbox/evaluation/ @X-PG13
+/src/agent_security_sandbox/tools/ @X-PG13
+
+# Validation and release artifacts
+/tests/ @X-PG13
+/data/ @X-PG13
+/results/ @X-PG13
+/artifacts/ @X-PG13
+/paper/ @X-PG13

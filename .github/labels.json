@@ -1,0 +1,157 @@
+[
+  {
+    "name": "bug",
+    "color": "d73a4a",
+    "description": "Confirmed defect or broken behavior."
+  },
+  {
+    "name": "enhancement",
+    "color": "a2eeef",
+    "description": "New feature request or product improvement."
+  },
+  {
+    "name": "documentation",
+    "color": "0075ca",
+    "description": "Documentation content, structure, or docs tooling."
+  },
+  {
+    "name": "question",
+    "color": "d876e3",
+    "description": "Usage question or clarification request."
+  },
+  {
+    "name": "research",
+    "color": "5319e7",
+    "description": "Benchmark design, evaluation method, or paper-facing research work."
+  },
+  {
+    "name": "security",
+    "color": "b60205",
+    "description": "Security hardening, sandbox policy, or defense robustness work."
+  },
+  {
+    "name": "maintenance",
+    "color": "c5def5",
+    "description": "Refactoring, housekeeping, or repository maintenance."
+  },
+  {
+    "name": "dependencies",
+    "color": "0366d6",
+    "description": "Dependency upgrades or ecosystem compatibility changes."
+  },
+  {
+    "name": "release",
+    "color": "1d76db",
+    "description": "Versioning, packaging, release automation, or distribution assets."
+  },
+  {
+    "name": "good first issue",
+    "color": "7057ff",
+    "description": "Small, well-scoped work suitable for first-time contributors."
+  },
+  {
+    "name": "help wanted",
+    "color": "008672",
+    "description": "Maintainers welcome external help on this item."
+  },
+  {
+    "name": "duplicate",
+    "color": "cfd3d7",
+    "description": "This issue or pull request already exists."
+  },
+  {
+    "name": "invalid",
+    "color": "e4e669",
+    "description": "This report or proposal is not actionable as filed."
+  },
+  {
+    "name": "wontfix",
+    "color": "ffffff",
+    "description": "This item will not be worked on."
+  },
+  {
+    "name": "area: benchmark",
+    "color": "0052cc",
+    "description": "Benchmark cases, schemas, or benchmark packaging."
+  },
+  {
+    "name": "area: cli",
+    "color": "0e8a16",
+    "description": "CLI behavior, commands, or terminal UX."
+  },
+  {
+    "name": "area: core",
+    "color": "1d76db",
+    "description": "Agent loop, LLM clients, or shared runtime logic."
+  },
+  {
+    "name": "area: defenses",
+    "color": "5319e7",
+    "description": "Defense implementations, configs, or defense registry."
+  },
+  {
+    "name": "area: evaluation",
+    "color": "6f42c1",
+    "description": "Metrics, analysis, reporting, judges, or experiments."
+  },
+  {
+    "name": "area: docs",
+    "color": "0075ca",
+    "description": "README, docs site, templates, or contributor guidance."
+  },
+  {
+    "name": "area: tooling",
+    "color": "fbca04",
+    "description": "CI, scripts, packaging, developer tooling, or automation."
+  },
+  {
+    "name": "area: release",
+    "color": "bfd4f2",
+    "description": "Tags, releases, checksums, SBOMs, attestations, or distribution."
+  },
+  {
+    "name": "priority: p0",
+    "color": "b60205",
+    "description": "Release-blocking or security-critical work."
+  },
+  {
+    "name": "priority: p1",
+    "color": "d93f0b",
+    "description": "High-priority work that should be handled soon."
+  },
+  {
+    "name": "priority: p2",
+    "color": "fbca04",
+    "description": "Normal roadmap priority."
+  },
+  {
+    "name": "priority: p3",
+    "color": "c2e0c6",
+    "description": "Nice-to-have or backlog work."
+  },
+  {
+    "name": "status: needs-triage",
+    "color": "ededed",
+    "description": "New item awaiting maintainer triage."
+  },
+  {
+    "name": "status: needs-info",
+    "color": "f9d0c4",
+    "description": "Needs more detail from the reporter before action."
+  },
+  {
+    "name": "status: ready",
+    "color": "0e8a16",
+    "description": "Triaged and ready for implementation."
+  },
+  {
+    "name": "status: in-progress",
+    "color": "1d76db",
+    "description": "Actively being worked on."
+  },
+  {
+    "name": "status: blocked",
+    "color": "b60205",
+    "description": "Cannot proceed until an external dependency or decision is resolved."
+  }
+]
