@@ -60,7 +60,7 @@ jobs:
       - uses: actions/attest-build-provenance@v3
         with:
           subject-checksums: release-assets/release-assets.sha256
-      - uses: actions/attest-sbom@v3
+      - uses: actions/attest-sbom@v4
         with:
           subject-checksums: release-assets/dist-assets.sha256
           sbom-path: release-assets/agent-security-sandbox.spdx.json
