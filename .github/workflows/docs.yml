@@ -35,9 +35,20 @@ jobs:
           cache: "pip"
       - run: pip install -e ".[docs]"
       - run: mkdocs build --strict
-      - uses: actions/upload-pages-artifact@v4
+      - run: |
+          tar \
+            --directory site \
+            --dereference \
+            --hard-dereference \
+            --create \
+            --file github-pages.tar \
+            .
+          gzip --force github-pages.tar
+      - uses: actions/upload-artifact@v6
         with:
-          path: site
+          name: github-pages
+          path: github-pages.tar.gz
+          retention-days: 1
 
   deploy:
     needs: build
