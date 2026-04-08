@@ -31,6 +31,14 @@ If an issue does not yet have enough detail, keep `status: needs-triage` or move
 - `priority: p2`: normal planned work.
 - `priority: p3`: backlog or exploratory work.
 
+## Maintainer Cadence
+
+- Check the issue queue regularly and try to clear `status: needs-triage` items in short batches rather than letting them accumulate.
+- Close or relabel low-signal issues quickly; long periods in `status: needs-triage` make the tracker look unmaintained.
+- Review PRs after required checks complete. Prefer small review cycles over large, stale branches.
+- Reserve `priority: p0` for genuinely urgent work so it stays meaningful.
+- Use patch releases to ship grouped maintenance work instead of tagging every small cleanup individually.
+
 ## Contributor-Facing Labels
 
 - Use `good first issue` only for self-contained tasks with a clear entry point and low coordination cost.

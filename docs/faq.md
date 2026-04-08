@@ -26,7 +26,11 @@ The mini benchmark is enough for smoke tests and keeps wheel size under control.
 
 ## Is PyPI publishing enabled?
 
-Not by default. The release workflow is configured for GitHub Releases, and PyPI publishing remains gated behind an explicit repository variable and a Trusted Publisher setup.
+Not by default. GitHub Releases are the canonical distribution channel, and PyPI publishing remains gated behind an explicit repository variable and a Trusted Publisher setup. The intent is to keep the public release surface small until there is clear external demand for a PyPI package.
+
+## How often are releases cut?
+
+Normal maintenance work is batched into patch releases. The project cuts an out-of-band release only for security fixes, broken installs, corrupted benchmark artifacts, or release-pipeline failures.
 
 ## Which results are checked into the repository?
 

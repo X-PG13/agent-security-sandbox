@@ -2,6 +2,18 @@
 
 This project currently publishes GitHub Releases. PyPI wiring exists but remains intentionally disabled by default.
 
+## Distribution Policy
+
+- GitHub Releases are the canonical distribution channel for this project.
+- PyPI remains opt-in infrastructure, not part of the default maintainer flow.
+- Do not enable PyPI just because the workflow supports it. Turn it on only if there is clear external demand for `pip install agent-security-sandbox` or a packaging requirement that GitHub Releases no longer satisfy.
+
+## Release Cadence
+
+- Patch releases (`vX.Y.Z`) are batched when fixes, docs hardening, reproducibility updates, or release-pipeline improvements have accumulated into a meaningful maintenance drop.
+- Release immediately for security-critical fixes, broken default installs, or benchmark corruption.
+- Avoid cutting tags for tiny README-only changes unless they materially affect installation, release assets, or published documentation.
+
 ## Before You Bump Anything
 
 - Ensure `git status` is clean.

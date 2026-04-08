@@ -22,7 +22,12 @@
 - Getting started: [`docs/getting-started.md`](docs/getting-started.md)
 - Provider configuration: [`docs/provider-config.md`](docs/provider-config.md)
 - Reproducibility guide: [`docs/reproducibility.md`](docs/reproducibility.md)
+- Maintenance policy: [`docs/maintenance.md`](docs/maintenance.md)
 - Contributing: [`CONTRIBUTING.md`](CONTRIBUTING.md)
+
+## Distribution Policy
+
+GitHub Releases are the canonical distribution channel for ASB. PyPI support remains intentionally disabled by default and should only be enabled if external usage justifies the added maintenance surface.
 
 ## Quick Start
 

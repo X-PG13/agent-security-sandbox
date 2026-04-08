@@ -78,6 +78,7 @@ ruff check --fix src/ tests/
 ## Maintainer Notes
 
 - Release steps are documented in [`docs/release.md`](docs/release.md).
+- Ongoing maintainer expectations and release cadence are documented in [`docs/maintenance.md`](docs/maintenance.md).
 - Reproduction inputs, artifact mapping, and checksum verification live in [`docs/reproducibility.md`](docs/reproducibility.md).
 - Label ownership, CODEOWNERS scope, and issue triage rules are documented in [`docs/triage.md`](docs/triage.md).
 

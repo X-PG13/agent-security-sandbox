@@ -36,5 +36,6 @@ nav:
       - Limitations & Ethics: limitations_and_ethics.md
       - Related Work: related_work.md
   - Maintainers:
+      - Maintenance Policy: maintenance.md
       - Release Checklist: release.md
       - Issue Triage: triage.md
