@@ -12,6 +12,7 @@ from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT = PROJECT_ROOT / "artifacts" / "project-manifest.json"
+CHECKSUM_MANIFEST = PROJECT_ROOT / "artifacts" / "reproducibility-checksums.sha256"
 
 
 def _sha256(path: Path) -> str:
@@ -53,12 +54,32 @@ def _read_version() -> str:
     return match.group(1)
 
 
-def _artifact_entry(path: Path) -> dict[str, Any]:
-    return {"path": _relative(path), "sha256": _sha256(path)}
+def _load_known_checksums() -> dict[str, str]:
+    checksums: dict[str, str] = {}
+    with CHECKSUM_MANIFEST.open("r", encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            digest, relative_path = line.split("  ", maxsplit=1)
+            checksums[relative_path] = digest
+    return checksums
+
+
+def _artifact_entry(path: Path, known_checksums: dict[str, str]) -> dict[str, Any]:
+    relative_path = _relative(path)
+    if path.exists():
+        sha256 = _sha256(path)
+    elif relative_path in known_checksums:
+        sha256 = known_checksums[relative_path]
+    else:
+        raise FileNotFoundError(path)
+    return {"path": relative_path, "sha256": sha256}
 
 
 def build_manifest() -> dict[str, Any]:
     version = _read_version()
+    known_checksums = _load_known_checksums()
     benchmark_dir = PROJECT_ROOT / "data" / "full_benchmark"
     benchmark_files = []
     benchmark_totals = {"total_cases": 0, "attack_cases": 0, "benign_cases": 0}
@@ -115,8 +136,10 @@ def build_manifest() -> dict[str, Any]:
             "files": benchmark_files,
         },
         "reference_artifacts": {
-            "results": [_artifact_entry(path) for path in result_paths],
-            "submission_figures": [_artifact_entry(path) for path in figure_paths],
+            "results": [_artifact_entry(path, known_checksums) for path in result_paths],
+            "submission_figures": [
+                _artifact_entry(path, known_checksums) for path in figure_paths
+            ],
         },
         "scripts": {
             "full_reproduction": {
