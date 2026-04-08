@@ -11,8 +11,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: "pip"
@@ -32,11 +32,11 @@ jobs:
           upload-release-assets: false
       - run: shasum -a 256 dist/* > release-assets/dist-assets.sha256
       - run: shasum -a 256 dist/* release-assets/project-manifest.json release-assets/agent-security-sandbox.spdx.json > release-assets/release-assets.sha256
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/*
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-metadata
           path: release-assets/*
@@ -49,18 +49,18 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: release-metadata
           path: release-assets
-      - uses: actions/attest-build-provenance@v3
+      - uses: actions/attest-build-provenance@v4
         with:
           subject-checksums: release-assets/release-assets.sha256
-      - uses: actions/attest-sbom@v3
+      - uses: actions/attest-sbom@v4
         with:
           subject-checksums: release-assets/dist-assets.sha256
           sbom-path: release-assets/agent-security-sandbox.spdx.json
@@ -71,11 +71,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: release-metadata
           path: release-assets
@@ -95,7 +95,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist
