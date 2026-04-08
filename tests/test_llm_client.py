@@ -1,9 +1,14 @@
 """Tests for LLM client module."""
+import math
+from types import SimpleNamespace
+
 import pytest
 
+import agent_security_sandbox.core.llm_client as llm_mod
 from agent_security_sandbox.core.llm_client import (
     LLMResponse,
     MockLLMClient,
+    OpenAIClient,
     ScenarioMockLLMClient,
     create_llm_client,
 )
@@ -258,6 +263,184 @@ def test_scenario_mock_extract_doc_title():
     """Test document title extraction."""
     assert ScenarioMockLLMClient._extract_doc_title("titled 'My Report'") == "My Report"
     assert ScenarioMockLLMClient._extract_doc_title("just create") == "Document"
+
+
+def test_mock_embedding_is_normalized():
+    embedding = MockLLMClient().embed("hello world")
+    assert len(embedding) == 64
+    norm = math.sqrt(sum(value * value for value in embedding))
+    assert norm == pytest.approx(1.0)
+
+
+def test_base_llm_embed_raises_not_implemented():
+    class DummyClient(llm_mod.LLMClient):
+        def call(self, messages, max_tokens=None, tools=None):  # pragma: no cover - trivial
+            return LLMResponse(content="ok", tokens_used=1)
+
+    with pytest.raises(NotImplementedError, match="does not support embed"):
+        DummyClient("dummy").embed("hello")
+
+
+def test_openai_client_call_extracts_tool_calls_and_updates_stats(monkeypatch):
+    class FakeOpenAI:
+        def __init__(self, **kwargs):
+            self.init_kwargs = kwargs
+            self.last_chat_kwargs = None
+            self.last_embedding_kwargs = None
+            self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
+            self.embeddings = SimpleNamespace(create=self._embed)
+
+        def _create(self, **kwargs):
+            self.last_chat_kwargs = kwargs
+            tool_call = SimpleNamespace(
+                id="call_1",
+                function=SimpleNamespace(name="read_email", arguments='{"email_id":"email_001"}'),
+            )
+            message = SimpleNamespace(content=None, tool_calls=[tool_call])
+            usage = SimpleNamespace(total_tokens=12, prompt_tokens=7, completion_tokens=5)
+            return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=usage)
+
+        def _embed(self, **kwargs):
+            self.last_embedding_kwargs = kwargs
+            return SimpleNamespace(data=[SimpleNamespace(embedding=[0.1, 0.2, 0.3])])
+
+    import openai
+
+    monkeypatch.setattr(openai, "OpenAI", FakeOpenAI)
+    client = OpenAIClient(model="gpt-4o", api_key="secret", base_url="https://proxy.example/v1")
+    response = client.call(
+        [{"role": "user", "content": "Read email_001"}],
+        max_tokens=64,
+        tools=[{"type": "function", "function": {"name": "read_email", "parameters": {}}}],
+    )
+
+    assert client.client.init_kwargs == {
+        "api_key": "secret",
+        "base_url": "https://proxy.example/v1",
+    }
+    assert client.client.last_chat_kwargs["max_tokens"] == 64
+    assert client.client.last_chat_kwargs["tool_choice"] == "auto"
+    assert response.content == ""
+    assert response.tool_calls[0]["function"]["name"] == "read_email"
+    assert client.get_stats()["total_calls"] == 1
+    assert client.get_stats()["total_tokens"] == 12
+    assert client.get_stats()["prompt_tokens"] == 7
+    assert client.get_stats()["completion_tokens"] == 5
+    assert client.embed("hello") == [0.1, 0.2, 0.3]
+    assert client.client.last_embedding_kwargs == {
+        "model": "text-embedding-3-small",
+        "input": "hello",
+    }
+
+
+def test_openai_client_retries_then_raises(monkeypatch):
+    class FailingOpenAI:
+        def __init__(self, **kwargs):
+            self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
+
+        def _create(self, **kwargs):
+            raise RuntimeError("boom")
+
+    import openai
+
+    monkeypatch.setattr(openai, "OpenAI", FailingOpenAI)
+    sleep_calls = []
+    monkeypatch.setattr(llm_mod.time, "sleep", lambda delay: sleep_calls.append(delay))
+
+    client = OpenAIClient(model="gpt-4o", api_key="secret")
+    with pytest.raises(RuntimeError, match="after 5 attempts: boom"):
+        client.call([{"role": "user", "content": "hello"}])
+
+    assert sleep_calls == [2.0, 4.0, 8.0, 16.0]
+
+
+def test_openai_estimate_tokens_falls_back_when_tiktoken_fails(monkeypatch):
+    fake_tiktoken = SimpleNamespace(
+        encoding_for_model=lambda model: (_ for _ in ()).throw(KeyError())
+    )
+    monkeypatch.setattr(llm_mod, "TIKTOKEN_AVAILABLE", True)
+    monkeypatch.setattr(llm_mod, "tiktoken", fake_tiktoken, raising=False)
+
+    client = object.__new__(OpenAIClient)
+    client.model = "unknown-model"
+    assert client.estimate_tokens("abcd") == 1
+
+
+def test_anthropic_client_call_converts_messages_and_tools(monkeypatch):
+    class FakeMessagesAPI:
+        def __init__(self):
+            self.last_kwargs = None
+
+        def create(self, **kwargs):
+            self.last_kwargs = kwargs
+            response_blocks = [
+                SimpleNamespace(type="text", text="Done."),
+                SimpleNamespace(
+                    type="tool_use",
+                    id="toolu_1",
+                    name="send_email",
+                    input={"to": "a@b.com"},
+                ),
+            ]
+            usage = SimpleNamespace(input_tokens=3, output_tokens=4)
+            return SimpleNamespace(content=response_blocks, usage=usage)
+
+    class FakeAnthropic:
+        def __init__(self, api_key):
+            self.api_key = api_key
+            self.messages = FakeMessagesAPI()
+
+    import anthropic
+
+    monkeypatch.setattr(anthropic, "Anthropic", FakeAnthropic)
+    client = llm_mod.AnthropicClient(model="claude-test", api_key="secret")
+    response = client.call(
+        [
+            {"role": "system", "content": "system prompt"},
+            {
+                "role": "assistant",
+                "content": "Planning",
+                "tool_calls": [
+                    {
+                        "id": "call_1",
+                        "function": {"name": "read_email", "arguments": "{not-json}"},
+                    }
+                ],
+            },
+            {"role": "tool", "tool_call_id": "call_1", "content": "tool output"},
+            {"role": "user", "content": "continue"},
+        ],
+        max_tokens=123,
+        tools=[
+            {
+                "type": "function",
+                "function": {
+                    "name": "read_email",
+                    "description": "Read an email",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"email_id": {"type": "string"}},
+                    },
+                },
+            }
+        ],
+    )
+
+    kwargs = client.client.messages.last_kwargs
+    assert kwargs["system"] == "system prompt"
+    assert kwargs["max_tokens"] == 123
+    assert kwargs["tools"][0]["name"] == "read_email"
+    assert kwargs["messages"][0]["role"] == "assistant"
+    assert kwargs["messages"][0]["content"][1]["input"] == {}
+    assert kwargs["messages"][1]["content"][0]["type"] == "tool_result"
+    assert response.content == "Done."
+    assert response.tool_calls[0]["function"]["name"] == "send_email"
+    assert client.get_stats()["total_tokens"] == 7
+
+
+def test_anthropic_estimate_tokens_uses_character_fallback():
+    client = object.__new__(llm_mod.AnthropicClient)
+    assert client.estimate_tokens("abcdefgh") == 2
 
 
 def test_openai_client_estimate_tokens_fallback():

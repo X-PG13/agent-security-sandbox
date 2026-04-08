@@ -28,6 +28,26 @@ pip install -e .
 
 The repository is also exercised in CI on Python `3.10`, `3.11`, and `3.12`.
 
+## Project Manifest
+
+The machine-readable release manifest is stored at:
+
+- `artifacts/project-manifest.json`
+
+It links:
+
+- package version and Python requirement
+- benchmark file counts and per-file checksums
+- reference result artifacts and submission figures
+- reproduction scripts and their expected outputs
+- the documented smoke-check commands used in CI
+
+Verify that the checked-in manifest matches the current repository state with:
+
+```bash
+python scripts/generate_project_manifest.py --check
+```
+
 ## Checksum Manifest
 
 The repository ships a machine-readable checksum file:
@@ -61,14 +81,18 @@ shasum -a 256 -c artifacts/reproducibility-checksums.sha256
 ## Recommended Verification Flow
 
 1. Run the test suite and coverage check.
-2. Verify the checksum manifest.
-3. Run the mock reproduction scripts.
-4. Compare regenerated outputs with the checked-in summaries.
-5. Only then spend API budget on a full external rerun.
+2. Verify the machine-readable project manifest.
+3. Verify the checksum manifest.
+4. Run the documented smoke checks.
+5. Run the mock reproduction scripts.
+6. Compare regenerated outputs with the checked-in summaries.
+7. Only then spend API budget on a full external rerun.
 
 ```bash
 pytest tests/ --cov=agent_security_sandbox --cov-report=term-missing:skip-covered
+python scripts/generate_project_manifest.py --check
 shasum -a 256 -c artifacts/reproducibility-checksums.sha256
+python scripts/docs_smoke_check.py
 ./scripts/reproduce_main_table.sh --provider mock
 ./scripts/reproduce_all_figures.sh
 ```
@@ -78,3 +102,6 @@ shasum -a 256 -c artifacts/reproducibility-checksums.sha256
 - Mock-provider runs should be deterministic and are the right baseline for CI and installation validation.
 - Real-provider runs can drift due to model updates, rate limits, retry behavior, and third-party endpoint changes.
 - The checked-in summaries and checksums are the canonical reference for this release branch.
+- Tagged GitHub releases attach a generated SBOM and project manifest, and the
+  release workflow emits provenance and SBOM attestations for the published
+  assets.

@@ -17,15 +17,56 @@ jobs:
           python-version: "3.11"
           cache: "pip"
       - run: pip install -e ".[dev]"
+      - run: python scripts/generate_project_manifest.py --check
+      - run: mkdir -p release-assets
+      - run: python scripts/generate_project_manifest.py --output release-assets/project-manifest.json
       - run: python -m build
       - run: python -m twine check dist/*
+      - uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: release-assets/agent-security-sandbox.spdx.json
+          artifact-name: agent-security-sandbox.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+      - run: shasum -a 256 dist/* > release-assets/dist-assets.sha256
+      - run: shasum -a 256 dist/* release-assets/project-manifest.json release-assets/agent-security-sandbox.spdx.json > release-assets/release-assets.sha256
       - uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-metadata
+          path: release-assets/*
+
+  attest-release-assets:
+    needs: build-dist
+    runs-on: ubuntu-latest
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-metadata
+          path: release-assets
+      - uses: actions/attest-build-provenance@v3
+        with:
+          subject-checksums: release-assets/release-assets.sha256
+      - uses: actions/attest-sbom@v3
+        with:
+          subject-checksums: release-assets/dist-assets.sha256
+          sbom-path: release-assets/agent-security-sandbox.spdx.json
 
   github-release:
-    needs: build-dist
+    needs: [build-dist, attest-release-assets]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -34,10 +75,14 @@ jobs:
         with:
           name: dist
           path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-metadata
+          path: release-assets
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/* \
+          gh release create "$GITHUB_REF_NAME" dist/* release-assets/* \
             --repo "$GITHUB_REPOSITORY" \
             --title "$GITHUB_REF_NAME" \
             --generate-notes

@@ -12,7 +12,7 @@ This project currently publishes GitHub Releases. PyPI wiring exists but remains
   - `PROJECT_STATUS.md`
   - `README.md`
   - `CITATION.cff`
-- If benchmark counts or result summaries changed, update `docs/reproducibility.md` and regenerate `artifacts/reproducibility-checksums.sha256`.
+- If benchmark counts or result summaries changed, update `docs/reproducibility.md`, regenerate `artifacts/reproducibility-checksums.sha256`, and refresh `artifacts/project-manifest.json`.
 
 ## Validation Commands
 
@@ -25,6 +25,8 @@ mypy src/agent_security_sandbox/
 mkdocs build --strict
 python -m build
 python -m twine check dist/*
+python scripts/generate_project_manifest.py --check
+python scripts/docs_smoke_check.py
 shasum -a 256 -c artifacts/reproducibility-checksums.sha256
 ```
 
@@ -39,12 +41,16 @@ The `release.yml` workflow will:
 
 1. build `sdist` and `wheel`
 2. run `twine check`
-3. upload the distribution artifacts
-4. create a GitHub Release
+3. generate a release SBOM
+4. generate a release manifest and checksums for the release assets
+5. create provenance and SBOM attestations
+6. upload the distribution assets, SBOM, and manifest to the GitHub Release
 
 ## Post-Release Checks
 
 - Confirm the release page has both `tar.gz` and `.whl` assets.
+- Confirm the release page also has the generated SBOM, manifest, and asset checksum files.
+- Confirm the GitHub attestation records exist for both provenance and SBOM.
 - Confirm the docs site still renders successfully.
 - Confirm the tag matches the intended commit.
 - If release notes are too terse, edit the GitHub Release body after the workflow completes.

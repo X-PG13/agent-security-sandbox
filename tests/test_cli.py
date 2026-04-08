@@ -1,9 +1,16 @@
 """Tests for CLI commands."""
+import builtins
 import json
+import subprocess
+import sys
+from pathlib import Path
+from types import SimpleNamespace
 
+import click
 import pytest
 from click.testing import CliRunner
 
+from agent_security_sandbox.cli import main as cli_main
 from agent_security_sandbox.cli.main import cli
 
 
@@ -130,6 +137,28 @@ def test_evaluate_command_mock(runner, tmp_benchmark_dir):
         "--quiet",
     ])
     assert result.exit_code == 0 or "Error" in result.output
+
+
+def test_evaluate_suite_shortcut_uses_bundled_benchmark(runner, tmp_path):
+    result = runner.invoke(
+        cli,
+        [
+            "evaluate",
+            "--suite",
+            "mini",
+            "--provider",
+            "mock",
+            "-d",
+            "D0",
+            "--output",
+            str(tmp_path / "mini_results"),
+            "--max-steps",
+            "3",
+            "--quiet",
+        ],
+    )
+    assert result.exit_code == 0
+    assert (tmp_path / "mini_results" / "results_D0.json").exists()
 
 
 def test_evaluate_multiple_defenses(runner, tmp_benchmark_dir):
@@ -380,17 +409,103 @@ def test_report_to_file(runner, tmp_path):
 
 def test_serve_missing_streamlit(runner, monkeypatch):
     """serve should error if streamlit not installed."""
-    import sys
-    # Temporarily make streamlit unimportable
-    monkeypatch.setitem(sys.modules, "streamlit", None)
+    original_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == "streamlit":
+            raise ImportError("missing streamlit")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
     result = runner.invoke(cli, ["serve"])
-    # Either ClickException about streamlit or import error
     assert result.exit_code != 0
+    assert "Streamlit is not installed" in result.output
+
+
+def test_serve_invokes_streamlit_subprocess(runner, monkeypatch):
+    """serve should call subprocess with the expected Streamlit command."""
+    commands = []
+
+    monkeypatch.setitem(sys.modules, "streamlit", SimpleNamespace())
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda cmd, check: commands.append((cmd, check)),
+    )
+
+    result = runner.invoke(cli, ["serve", "--port", "9999", "--host", "127.0.0.1"])
+    assert result.exit_code == 0
+    assert "Starting Streamlit on http://127.0.0.1:9999" in result.output
+    cmd, check = commands[0]
+    assert check is True
+    assert cmd[:4] == [cli_main.sys.executable, "-m", "streamlit", "run"]
+    assert Path(cmd[4]).name == "demo_app.py"
+
+
+def test_serve_surfaces_subprocess_failure(runner, monkeypatch):
+    monkeypatch.setitem(sys.modules, "streamlit", SimpleNamespace())
+
+    def fail(cmd, check):
+        raise subprocess.CalledProcessError(returncode=3, cmd=cmd)
+
+    monkeypatch.setattr(subprocess, "run", fail)
+    result = runner.invoke(cli, ["serve"])
+    assert result.exit_code != 0
+    assert "Streamlit exited with code 3" in result.output
+
+
+def test_serve_errors_when_demo_app_is_missing(runner, monkeypatch):
+    original_exists = Path.exists
+
+    def fake_exists(self):
+        if self.name == "demo_app.py":
+            return False
+        return original_exists(self)
+
+    monkeypatch.setitem(sys.modules, "streamlit", SimpleNamespace())
+    monkeypatch.setattr(cli_main.Path, "exists", fake_exists)
+
+    result = runner.invoke(cli, ["serve"])
+    assert result.exit_code != 0
+    assert "Streamlit app not found" in result.output
 
 
 # ---------------------------------------------------------------------------
 # internal helpers
 # ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    ("helper_name", "module_name", "message"),
+    [
+        ("_import_llm_client", "agent_security_sandbox.core.llm_client", "LLM client module"),
+        ("_import_tool_registry", "agent_security_sandbox.tools.registry", "ToolRegistry"),
+        ("_import_agent", "agent_security_sandbox.core.agent", "ReactAgent"),
+        (
+            "_import_benchmark_suite",
+            "agent_security_sandbox.evaluation.benchmark",
+            "BenchmarkSuite",
+        ),
+        (
+            "_import_experiment_runner",
+            "agent_security_sandbox.evaluation.runner",
+            "ExperimentRunner",
+        ),
+        ("_import_reporter", "agent_security_sandbox.evaluation.reporter", "Reporter"),
+    ],
+)
+def test_import_helpers_raise_click_exception(monkeypatch, helper_name, module_name, message):
+    original_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == module_name:
+            raise ImportError("boom")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    with pytest.raises(click.ClickException, match=message):
+        getattr(cli_main, helper_name)()
+
 
 def test_serialize_experiment_result():
     """_serialize_experiment_result handles enums and nested dicts."""
@@ -438,5 +553,93 @@ def test_resolve_config_dir():
     """_resolve_config_dir returns a Path."""
     from agent_security_sandbox.cli.main import _resolve_config_dir
     result = _resolve_config_dir()
-    from pathlib import Path
     assert isinstance(result, Path)
+
+
+def test_resolve_config_dir_prefers_env(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    monkeypatch.setenv("ASB_CONFIG_DIR", str(config_dir))
+    assert cli_main._resolve_config_dir() == config_dir.resolve()
+
+
+def test_load_defense_config_from_explicit_dir(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "defenses.yaml").write_text(
+        "defenses:\n  D1:\n    config:\n      delimiter_start: '<<X>>'\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("ASB_CONFIG_DIR", str(config_dir))
+    assert cli_main._load_defense_config("D1") == {"delimiter_start": "<<X>>"}
+
+
+def test_load_defense_config_invalid_yaml_returns_empty(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "defenses.yaml").write_text("defenses: [broken", encoding="utf-8")
+    monkeypatch.setenv("ASB_CONFIG_DIR", str(config_dir))
+    assert cli_main._load_defense_config("D1") == {}
+
+
+def test_build_llm_client_omits_base_url_for_mock(monkeypatch):
+    calls = []
+
+    def fake_factory(*, provider, model, **kwargs):
+        calls.append({"provider": provider, "model": model, "kwargs": kwargs})
+        return SimpleNamespace(provider=provider, model=model, kwargs=kwargs)
+
+    monkeypatch.setattr(cli_main, "_import_llm_client", lambda: fake_factory)
+    cli_main._build_llm_client("mock", "scenario-mock", "https://proxy.example/v1")
+    cli_main._build_llm_client("openai-compatible", "gpt-4o", "https://proxy.example/v1")
+
+    assert calls[0]["kwargs"] == {}
+    assert calls[1]["kwargs"] == {"base_url": "https://proxy.example/v1"}
+
+
+def test_build_defense_fallback_unknown_when_registry_missing(monkeypatch):
+    monkeypatch.setattr(cli_main, "_import_defense_factory", lambda: None)
+    monkeypatch.setattr(cli_main, "_load_defense_config", lambda defense_id: {})
+
+    with pytest.raises(Exception, match="only D0 and D1 are available"):
+        cli_main._build_defense("D9")
+
+
+def test_report_invalid_verdict_falls_back_to_attack_blocked(runner, tmp_path):
+    result_data = {
+        "defense_name": "D0",
+        "timestamp": "",
+        "metrics": {
+            "asr": 0.0,
+            "bsr": 1.0,
+            "fpr": 0.0,
+            "total_cost": 0,
+            "num_cases": 1,
+            "attack_cases": 0,
+            "benign_cases": 1,
+            "details": {},
+        },
+        "results": [
+            {"case_id": "b1", "verdict": "not-a-real-verdict", "reason": "ok", "details": {}},
+        ],
+    }
+    (tmp_path / "results_D0.json").write_text(json.dumps(result_data), encoding="utf-8")
+
+    result = runner.invoke(
+        cli,
+        ["report", "--results-dir", str(tmp_path), "--format", "markdown"],
+    )
+    assert result.exit_code == 0
+    assert "attack_blocked" in result.output
+
+
+def test_report_errors_when_all_result_files_are_invalid(runner, tmp_path):
+    (tmp_path / "results_D0.json").write_text("{not-json", encoding="utf-8")
+
+    result = runner.invoke(
+        cli,
+        ["report", "--results-dir", str(tmp_path), "--format", "markdown"],
+    )
+    assert result.exit_code != 0
+    assert "Skipping results_D0.json" in result.output
+    assert "No valid result files could be loaded" in result.output

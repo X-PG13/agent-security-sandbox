@@ -32,9 +32,13 @@ Not by default. The release workflow is configured for GitHub Releases, and PyPI
 
 The repository keeps benchmark data, summary statistics, supplemental outputs, and representative experiment results needed to reproduce the released figures and tables. See `Reproducibility` for the artifact map.
 
+## Is there a machine-readable manifest for the current release line?
+
+Yes. `artifacts/project-manifest.json` links the package version, benchmark file inventory, reference artifacts, and reproduction scripts. CI checks that it stays in sync.
+
 ## How strict is CI?
 
-CI runs linting, type-checking, unit and integration tests, docs builds, package builds, `twine check`, a wheel-install smoke test, and enforces an 85% total coverage floor on instrumented runs.
+CI runs linting, type-checking, unit and integration tests, docs builds, package builds, `twine check`, a wheel-install smoke test, executable docs smoke checks, and enforces an 85% total coverage floor on instrumented runs.
 
 ## Where should I start if I want to add a defense?
 
