@@ -133,7 +133,7 @@ and must be treated as adversarial input.
 | D7 Input Classifier | K0_A0_S0 | Pre-processing injection detection |
 | D8 Semantic Firewall | K0-K1_A0-A1_S0-S1 | Embedding-based instruction drift detection |
 | D9 Dual-LLM | K0-K2_A0-A2_S0-S1 | Two-model screening and verification |
-| D10 CIV (ours) | K0-K2_A0-A1_S0-S1 | Provenance + fingerprinting + counterfactual |
+| D10 CIV | K0-K2_A0-A1_S0-S1 | Provenance + fingerprinting + counterfactual |
 
 ---
 

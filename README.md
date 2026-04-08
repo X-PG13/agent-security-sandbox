@@ -7,40 +7,22 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Benchmark: 565 cases](https://img.shields.io/badge/Benchmark-565%20cases-orange.svg)](data/full_benchmark/)
 
-**A comprehensive benchmark framework for evaluating defenses against Indirect Prompt Injection (IPI) in tool-using LLM agents.** ASB provides 565 test cases, 11 defense strategies, and automated evaluation across 4 frontier LLMs — enabling reproducible, controlled comparison of IPI defenses.
+**ASB is a reproducible benchmark and evaluation harness for indirect prompt injection defenses in tool-using LLM agents.** It packages benchmark data, defense implementations, CLI and Python APIs, checked-in reference results, and release-ready reproduction scripts in a single repository.
 
-## Highlights
+## What You Can Do With ASB
 
-- **565 Benchmark Cases** — 352 attack + 213 benign cases across 6 attack types, 54 injection techniques, and 11 tools
-- **11 Defense Strategies** — Prompt-level, tool-gating, content-level, and multi-signal approaches (D0–D10)
-- **4 Frontier LLMs** — GPT-4o, Claude 4.5 Sonnet, DeepSeek V3.1, Gemini 2.5 Flash
-- **Automated Evaluation** — Rule-based judge with ASR/BSR/FPR metrics + statistical tests
-- **Composable Defenses** — Mix and match strategies for ablation and composition studies
-- **Full Reproducibility** — One-command reproduction of all paper results
+- Compare 11 defenses (`D0-D10`) on a shared 565-case benchmark with consistent metrics.
+- Run local smoke tests with the built-in mock provider before spending API budget.
+- Reproduce checked-in tables, figures, and summary metrics from versioned scripts and artifacts.
+- Extend the benchmark with custom defenses, models, tools, and benchmark cases.
 
-## Key Findings
+## Quick Links
 
-| Defense | Avg ASR ↓ | Avg BSR ↑ | ASR Reduction | Adaptive Bypass |
-|---|:---:|:---:|:---:|:---:|
-| **D0** Baseline | 0.413 | 0.912 | — | 30% |
-| **D5** Sandwich | **0.010** | **0.934** | **-97.5%** | **0%** |
-| **D1** Spotlighting | 0.020 | 0.913 | -95.1% | **0%** |
-| **D10** CIV | 0.089 | 0.821 | -78.4% | **0%** |
-| **D8** Semantic Firewall | 0.107 | 0.383 | -74.0% | **0%** |
-| **D2** Policy Gate | 0.307 | 0.762 | -25.7% | **0%** |
-| **D9** Dual-LLM | 0.263 | 0.578 | -36.5% | 10% |
-| **D4** Re-execution | 0.322 | 0.779 | -22.2% | 20% |
-| **D6** Output Filter | 0.379 | 0.902 | -8.3% | **0%** |
-| **D3** Task Alignment | 0.406 | 0.916 | -1.8% | 40% |
-| **D7** Input Classifier | 0.430 | 0.922 | +4.0% | 10% |
-
-*Results averaged across 4 models × 3 runs on the 250-case core benchmark.*
-
-**Key insights:**
-1. **Prompt-level defenses dominate** — D5 (Sandwich) achieves 97.5% attack reduction with 93.4% benign completion, outperforming all complex approaches.
-2. **Model robustness varies 4-5x** — Claude 4.5 Sonnet baseline ASR is 11.6% vs. 49-54% for other models.
-3. **Defense composition is additive** — D5+D10 achieves 0.3% ASR, but adding more layers yields diminishing returns.
-4. **Social engineering is hardest** — All defenses show elevated ASR on authority-impersonation attacks.
+- Docs site: <https://x-pg13.github.io/agent-security-sandbox/>
+- Getting started: [`docs/getting-started.md`](docs/getting-started.md)
+- Provider configuration: [`docs/provider-config.md`](docs/provider-config.md)
+- Reproducibility guide: [`docs/reproducibility.md`](docs/reproducibility.md)
+- Contributing: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
 ## Quick Start
 
@@ -121,6 +103,24 @@ runner = ExperimentRunner(
 result = runner.run_suite(suite)
 print(f"ASR={result.metrics.asr:.1%}, BSR={result.metrics.bsr:.1%}")
 ```
+
+## Benchmark At A Glance
+
+- **565 benchmark cases**: 352 attack + 213 benign cases
+- **11 defense strategies**: prompt-layer, tool-gating, content, and multi-signal defenses
+- **4 reference model families**: GPT-4o, Claude 4.5 Sonnet, DeepSeek V3.1, Gemini 2.5 Flash
+- **Versioned artifacts**: checked-in benchmark files, results, figures, and release assets
+
+## Reference Evaluation Snapshot
+
+The repository includes a checked-in reference sweep on the matched 250-case subset used for fair cross-defense comparison in the paper. The current snapshot is useful as a baseline for validation, not as a substitute for reproducing the full experiment pipeline.
+
+- `D5` has the lowest average ASR in the checked-in 250-case comparison.
+- `D1` remains a strong low-complexity baseline.
+- `D8` and `D9` reduce ASR materially, but with larger benign-task tradeoffs.
+- `D5+D10` is the strongest checked-in composition result, with diminishing returns beyond that pair.
+
+For exact input files, scripts, reference environment pins, and checksums, see [`docs/reproducibility.md`](docs/reproducibility.md).
 
 ## Benchmark Structure
 
@@ -251,7 +251,11 @@ pytest tests/ -v              # Run tests (562 tests)
 ruff check src/ tests/        # Lint
 mypy src/agent_security_sandbox/  # Type check
 mkdocs build --strict         # Build docs site
+python -m build               # Build sdist and wheel
+python -m twine check dist/*  # Verify release metadata
 ```
+
+CI enforces an `85%` total coverage floor on instrumented test runs.
 
 ## Citation
 

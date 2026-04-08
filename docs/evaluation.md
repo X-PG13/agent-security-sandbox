@@ -1,5 +1,7 @@
 # Evaluation Methodology
 
+For the full field-by-field benchmark schema, see `Benchmark Schema`. For scripts, checksums, and reference environment pins, see `Reproducibility`.
+
 ## Benchmark Dataset
 
 The framework provides two benchmark suites in JSONL format:

@@ -46,6 +46,8 @@ asb report --results-dir results/quick_test --format markdown
 ## Documentation map
 
 - `Getting Started` explains install modes and first commands.
-- `Architecture` and `Configuration` describe the runtime model.
-- `Defenses` and `Evaluation` cover the benchmark mechanics.
-- `Extending` shows how to add defenses and cases.
+- `Provider Configuration` shows how to configure `mock`, `openai`, `anthropic`, and `openai-compatible` backends.
+- `Benchmark Schema` documents case fields, naming rules, and validation commands.
+- `Evaluation` and `Reproducibility` cover reference artifacts, scripts, and verification steps.
+- `Defenses` and `Defense API` explain the shipped strategies and the extension surface.
+- `Release Checklist` captures the maintainer path for GitHub-only releases.

@@ -41,7 +41,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
       - run: pip install -e ".[dev]"
-      - run: pytest tests/ -v --cov=agent_security_sandbox --cov-report=xml
+      - run: pytest tests/ -v --cov=agent_security_sandbox --cov-report=xml --cov-report=term-missing:skip-covered
       - uses: codecov/codecov-action@v4
         if: matrix.python-version == '3.11'
         with:

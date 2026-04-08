@@ -20,11 +20,20 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
-  - Architecture: architecture.md
-  - Configuration: configuration.md
-  - Defenses: defenses.md
-  - Evaluation: evaluation.md
-  - Extending: extending.md
-  - Threat Model: threat_model.md
-  - Limitations & Ethics: limitations_and_ethics.md
-  - Related Work: related_work.md
+  - User Guide:
+      - Provider Configuration: provider-config.md
+      - Benchmark Schema: benchmark-schema.md
+      - Evaluation: evaluation.md
+      - Reproducibility: reproducibility.md
+      - FAQ: faq.md
+  - Reference:
+      - Architecture: architecture.md
+      - Configuration: configuration.md
+      - Defenses: defenses.md
+      - Defense API: defense-api.md
+      - Extending: extending.md
+      - Threat Model: threat_model.md
+      - Limitations & Ethics: limitations_and_ethics.md
+      - Related Work: related_work.md
+  - Maintainers:
+      - Release Checklist: release.md

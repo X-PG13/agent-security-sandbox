@@ -130,7 +130,7 @@ flag_tool_observations: false
 | D7 Input Classifier | Pre-processing | Yes | Optional | No |
 | D8 Semantic Firewall | Tool | No | Yes | No |
 | D9 Dual-LLM | Tool | No | Yes | Yes |
-| D10 CIV (ours) | Multi | No | Yes | No |
+| D10 CIV | Multi | No | Yes | No |
 
 ## D8: Semantic Firewall
 
@@ -142,7 +142,7 @@ Employs a separate screening LLM to evaluate whether a proposed tool call is con
 
 ## D10: Contextual Integrity Verification (CIV)
 
-Our novel multi-signal defense based on Nissenbaum's contextual integrity theory. CIV fuses three verification signals to determine whether each tool call is consistent with the user's original goal:
+Multi-signal defense based on Nissenbaum's contextual integrity theory. CIV fuses three verification signals to determine whether each tool call is consistent with the user's original goal:
 
 1. **Entity Provenance**: Checks whether tool-call parameters reference entities from untrusted content (e.g., attacker email addresses) rather than the user's goal.
 2. **Tool Affinity Fingerprint**: Models goal-tool compatibility using keyword-based implication maps and tool co-occurrence statistics. Unexpected tools receive low scores.

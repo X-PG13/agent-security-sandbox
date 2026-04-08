@@ -26,7 +26,7 @@ pip install -e ".[maintainer]"
 
 ```bash
 pytest tests/ -v
-pytest tests/ --cov=agent_security_sandbox --cov-report=term-missing
+pytest tests/ --cov=agent_security_sandbox --cov-report=term-missing:skip-covered
 ```
 
 ### Code Quality
@@ -55,15 +55,23 @@ ruff check --fix src/ tests/
 ## Pull Request Process
 
 1. **Fork** the repository and create a feature branch from `main`.
-2. **Write tests** for any new functionality. We target 80%+ code coverage.
+2. **Write tests** for any new functionality. CI enforces an 85% total coverage floor.
 3. **Run the full check suite** before submitting:
    ```bash
-   pytest tests/ -v
+   pytest tests/ --cov=agent_security_sandbox --cov-report=term-missing:skip-covered
    ruff check src/ tests/
    mypy src/
+   python -m build
+   python -m twine check dist/*
+   mkdocs build --strict
    ```
 4. **Open a pull request** against `main` with a clear description of the change.
 5. Ensure CI checks pass. A maintainer will review your PR.
+
+## Maintainer Notes
+
+- Release steps are documented in [`docs/release.md`](docs/release.md).
+- Reproduction inputs, artifact mapping, and checksum verification live in [`docs/reproducibility.md`](docs/reproducibility.md).
 
 ## Reporting Bugs
 

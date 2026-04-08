@@ -1,5 +1,7 @@
 # Configuration Guide
 
+For provider-specific credential and endpoint examples, see `Provider Configuration`.
+
 ## Environment Variables
 
 Create a `.env` file from the template:
