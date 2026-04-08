@@ -25,6 +25,6 @@ pytest==9.0.2
 pytest-cov==7.1.0
 ruff==0.15.7
 seaborn==0.13.2
-streamlit==1.55.0
+streamlit==1.56.0
 structlog==25.5.0
 twine==6.2.0
