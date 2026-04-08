@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.2] - Unreleased
+## [1.0.2] - 2026-04-08
 
 ### Added
 
@@ -17,9 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New docs pages for provider configuration, benchmark schema, defense API,
   and FAQ to reduce first-run friction for users and contributors.
 - A reference maintainer environment snapshot in
-  `requirements/reproducibility-1.0.1.txt`.
+  `requirements/reproducibility-1.0.2.txt`.
 - A checksum manifest in `artifacts/reproducibility-checksums.sha256` for
   benchmark files, aggregate result artifacts, and submission figures.
+- A machine-readable release manifest in `artifacts/project-manifest.json`
+  linking package version, benchmark inventory, reference artifacts, and
+  smoke-check commands.
+- Executable docs smoke checks in `scripts/docs_smoke_check.py` to validate
+  the CLI examples and Python API snippet shown in the docs.
+- Scheduled dependency maintenance via `.github/dependabot.yml`.
+- A `pip-audit` workflow for dependency vulnerability checks on pushes,
+  pull requests, and a weekly schedule.
 
 ### Changed
 
@@ -33,6 +41,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and CI test commands with the same coverage reporting format.
 - Pointed the package metadata documentation URL to the live GitHub Pages
   site instead of the raw repository docs directory.
+- Extended release automation with SBOM generation, release asset checksums,
+  and GitHub provenance/SBOM attestations.
+- Increased coverage for CLI, LLM client, interpretability, and real-tool
+  modules; total coverage is now validated above `92%`.
 
 ## [1.0.1] - 2026-04-08
 

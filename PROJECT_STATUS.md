@@ -1,6 +1,6 @@
 # Project Implementation Status
 
-## Current Version: v1.0.1
+## Current Version: v1.0.2
 
 ## Phase 1 Complete: Core Foundation
 
@@ -69,7 +69,7 @@
 ## Code Statistics
 
 - **Source modules**: 30+ Python files across core/, tools/, defenses/, evaluation/, adversary/, adapters/, cli/, ui/
-- **Test files**: 22 test files with 562 test cases
+- **Test files**: 23 test files with 596 test cases
 - **Benchmark cases**: 40 (mini) + 250 (core) + 565 (full)
 - **Defense strategies**: 11 individual (D0–D10) + composite pipeline
 - **Mock tools**: 11 (email x3, file x3, search x1, calendar x2, API x2)

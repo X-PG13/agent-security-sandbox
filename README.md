@@ -237,7 +237,7 @@ agent-security-sandbox/
 ├── config/             # YAML configs (tools, models, defenses)
 ├── experiments/        # Experiment scripts
 ├── scripts/            # Reproduction scripts
-├── tests/              # 562 tests
+├── tests/              # 596 tests
 ├── figures/            # Generated figures
 ├── results/            # Experiment results
 └── docs/               # Documentation
@@ -247,7 +247,7 @@ agent-security-sandbox/
 
 ```bash
 pip install -e ".[maintainer]"
-pytest tests/ -v              # Run tests (562 tests)
+pytest tests/ -v              # Run tests (596 tests)
 ruff check src/ tests/        # Lint
 mypy src/agent_security_sandbox/  # Type check
 mkdocs build --strict         # Build docs site
@@ -264,7 +264,7 @@ CI enforces an `85%` total coverage floor on instrumented test runs.
     title     = {Agent Security Sandbox: Benchmarking Defenses Against Indirect Prompt Injection in Tool-Using {LLM} Agents},
     author    = {Zhao, Yifan},
     year      = {2026},
-    version   = {1.0.1},
+    version   = {1.0.2},
     url       = {https://github.com/X-PG13/agent-security-sandbox}
 }
 ```

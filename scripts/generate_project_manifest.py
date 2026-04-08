@@ -58,6 +58,7 @@ def _artifact_entry(path: Path) -> dict[str, Any]:
 
 
 def build_manifest() -> dict[str, Any]:
+    version = _read_version()
     benchmark_dir = PROJECT_ROOT / "data" / "full_benchmark"
     benchmark_files = []
     benchmark_totals = {"total_cases": 0, "attack_cases": 0, "benign_cases": 0}
@@ -97,7 +98,7 @@ def build_manifest() -> dict[str, Any]:
         "schema_version": 1,
         "package": {
             "name": "agent-security-sandbox",
-            "version": _read_version(),
+            "version": version,
             "python_requires": ">=3.10",
             "documentation_url": "https://x-pg13.github.io/agent-security-sandbox/",
         },
@@ -105,7 +106,7 @@ def build_manifest() -> dict[str, Any]:
             "distribution_channel": "github-release",
             "release_workflow": ".github/workflows/release.yml",
             "checksum_manifest": "artifacts/reproducibility-checksums.sha256",
-            "reference_environment": "requirements/reproducibility-1.0.1.txt",
+            "reference_environment": f"requirements/reproducibility-{version}.txt",
         },
         "benchmark": {
             "path": "data/full_benchmark",

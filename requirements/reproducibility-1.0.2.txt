@@ -1,0 +1,31 @@
+# Reference maintainer environment validated for the v1.0.2 release line.
+# Intended for reproducibility and release verification, not as a universal lockfile.
+# Usage:
+#   python -m venv .venv
+#   source .venv/bin/activate
+#   pip install -r requirements/reproducibility-1.0.2.txt
+#   pip install -e .
+anthropic==0.91.0
+build==1.4.2
+click==8.3.1
+google-api-python-client==2.193.0
+google-auth==2.49.1
+google-auth-oauthlib==1.3.0
+matplotlib==3.10.8
+mkdocs==1.6.1
+mkdocs-material==9.7.6
+mypy==1.19.1
+numpy==2.4.3
+openai==2.30.0
+pandas==2.3.3
+pip-audit==2.9.0
+pydantic==2.12.5
+python-dotenv==1.2.2
+PyYAML==6.0.3
+pytest==9.0.2
+pytest-cov==7.1.0
+ruff==0.15.7
+seaborn==0.13.2
+streamlit==1.55.0
+structlog==25.5.0
+twine==6.2.0

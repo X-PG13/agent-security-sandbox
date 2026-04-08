@@ -15,14 +15,14 @@ This repository keeps the benchmark, checked-in reference results, figure-genera
 
 The validated maintainer snapshot is pinned in:
 
-- `requirements/reproducibility-1.0.1.txt`
+- `requirements/reproducibility-1.0.2.txt`
 
-Use it when you want a close match to the environment used to validate the `v1.0.1` release.
+Use it when you want a close match to the environment used to validate the `v1.0.2` release.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements/reproducibility-1.0.1.txt
+pip install -r requirements/reproducibility-1.0.2.txt
 pip install -e .
 ```
 

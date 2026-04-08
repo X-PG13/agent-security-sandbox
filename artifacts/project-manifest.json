@@ -157,7 +157,7 @@
     "documentation_url": "https://x-pg13.github.io/agent-security-sandbox/",
     "name": "agent-security-sandbox",
     "python_requires": ">=3.10",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   "reference_artifacts": {
     "results": [
@@ -200,7 +200,7 @@
   "release": {
     "checksum_manifest": "artifacts/reproducibility-checksums.sha256",
     "distribution_channel": "github-release",
-    "reference_environment": "requirements/reproducibility-1.0.1.txt",
+    "reference_environment": "requirements/reproducibility-1.0.2.txt",
     "release_workflow": ".github/workflows/release.yml"
   },
   "schema_version": 1,

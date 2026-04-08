@@ -6,6 +6,10 @@ This project currently publishes GitHub Releases. PyPI wiring exists but remains
 
 - Ensure `git status` is clean.
 - Confirm `CHANGELOG.md` has an entry for the target version.
+- Confirm dependency automation remains enabled:
+  - `.github/dependabot.yml`
+  - `.github/workflows/pip-audit.yml`
+- Confirm branch protection on `main` still requires the expected checks.
 - Align version strings in:
   - `pyproject.toml`
   - `src/agent_security_sandbox/__init__.py`
@@ -22,6 +26,7 @@ Run all of these locally before tagging:
 pytest tests/ --cov=agent_security_sandbox --cov-report=term-missing:skip-covered
 ruff check src/ tests/
 mypy src/agent_security_sandbox/
+python -m pip_audit
 mkdocs build --strict
 python -m build
 python -m twine check dist/*
@@ -51,6 +56,7 @@ The `release.yml` workflow will:
 - Confirm the release page has both `tar.gz` and `.whl` assets.
 - Confirm the release page also has the generated SBOM, manifest, and asset checksum files.
 - Confirm the GitHub attestation records exist for both provenance and SBOM.
+- Confirm the `pip-audit` workflow is green on the tagged commit or preceding release commit.
 - Confirm the docs site still renders successfully.
 - Confirm the tag matches the intended commit.
 - If release notes are too terse, edit the GitHub Release body after the workflow completes.

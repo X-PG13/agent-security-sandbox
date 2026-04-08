@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agent-security-sandbox"
-version = "1.0.1"
+version = "1.0.2"
 description = "A comprehensive benchmark framework for evaluating defenses against Indirect Prompt Injection in tool-using LLM agents"
 readme = "README.md"
 license = "MIT"
@@ -55,6 +55,7 @@ docs = [
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.0.0",
+    "pip-audit>=2.9.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
     "build>=1.2.2",

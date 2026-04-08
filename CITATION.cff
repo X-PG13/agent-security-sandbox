@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this software in your research, please cite it as below."
 type: software
 title: "Agent Security Sandbox: Benchmarking Defenses Against Indirect Prompt Injection in Tool-Using LLM Agents"
-version: 1.0.1
+version: 1.0.2
 date-released: 2026-04-08
 license: MIT
 url: "https://github.com/X-PG13/agent-security-sandbox"
@@ -37,6 +37,6 @@ preferred-citation:
       given-names: Yifan
       affiliation: "Zhijiang College of Zhejiang University of Technology"
   year: 2026
-  version: 1.0.1
+  version: 1.0.2
   date-released: 2026-04-08
   url: "https://github.com/X-PG13/agent-security-sandbox"
