@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - Unreleased
+
+### Added
+
+- Reproducibility documentation with an explicit artifact map covering the
+  main comparison, CIV ablation, adaptive attacks, composition study, and
+  submission figures.
+- Maintainer-facing release checklist documenting the GitHub-only release
+  flow, validation commands, and optional PyPI path.
+- New docs pages for provider configuration, benchmark schema, defense API,
+  and FAQ to reduce first-run friction for users and contributors.
+- A reference maintainer environment snapshot in
+  `requirements/reproducibility-1.0.1.txt`.
+- A checksum manifest in `artifacts/reproducibility-checksums.sha256` for
+  benchmark files, aggregate result artifacts, and submission figures.
+
+### Changed
+
+- Reorganized the docs site navigation into user-guide, reference, and
+  maintainer sections.
+- Tightened the README and docs homepage to focus more on installation,
+  reproducibility, extension points, and contribution workflow.
+- Updated `CONTRIBUTING.md` to point contributors at the release and
+  reproducibility guides and to include packaging/docs verification commands.
+- Raised the coverage policy to an explicit `85%` minimum and aligned local
+  and CI test commands with the same coverage reporting format.
+- Pointed the package metadata documentation URL to the live GitHub Pages
+  site instead of the raw repository docs directory.
+
 ## [1.0.1] - 2026-04-08
 
 ### Added
