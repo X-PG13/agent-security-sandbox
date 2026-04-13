@@ -16,7 +16,7 @@ mkdocs==1.6.1
 mkdocs-material==9.7.6
 mypy==1.19.1
 numpy==2.4.3
-openai==2.30.0
+openai==2.31.0
 pandas==2.3.3
 pydantic==2.12.5
 python-dotenv==1.2.2
